@@ -47,6 +47,7 @@ ul.unstyled{ margin-left: 20px; list-style: none; }
 h2 span { color: #F60; }
 .span2 h3{ color:#F60; }
 .text-info{ color:#F60; padding-left:10px; }
+.text-info2{ color:#000000; padding-left:10px; }
 .label-info{ color:#F60; background-color: #fff; text-shadow:none; font: 14px/1.7em 'Open Sans', arial, sans-serif;
 			padding:0; font-weight:normal; }
 
