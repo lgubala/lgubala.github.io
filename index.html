@@ -3,78 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penetration Testing Quiz - Multi-Chapter</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title>PentestPro - Interactive Learning</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles-enhanced.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Penetration Testing Quiz</h1>
-        
-        <!-- Welcome Screen -->
-        <div class="welcome-screen" id="welcomeScreen">
-            <h2>Test Your Penetration Testing Knowledge</h2>
-            <p>This quiz will test your knowledge on various penetration testing topics.</p>
-            <p>Select which chapters you want to be tested on and the number of questions.</p>
-            <button class="button" id="startBtn">Choose Chapters</button>
-        </div>
-        
-        <!-- Chapter Selection Screen -->
-        <div class="chapter-selection hidden" id="chapterSelection">
-            <h2>Select Chapters</h2>
-            <p>Choose which chapters you want to include in your quiz:</p>
-            
-            <div class="chapter-options" id="chapterOptionsContainer">
-                <!-- Chapter options will be dynamically added here -->
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <h1>PentestPro</h1>
             </div>
-            
-            <div class="chapter-options" style="margin-top: 20px;">
-                <p>Number of questions:</p>
-                <select id="questionCount" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd; width: 100%;">
-                    <option value="5">5 questions</option>
-                    <option value="10" selected>10 questions</option>
-                    <option value="15">15 questions</option>
-                    <option value="20">20 questions</option>
-                </select>
+            <div class="theme-toggle">
+                <i class="fas fa-moon" id="darkModeToggle"></i>
             </div>
-            
-            <div class="buttons-container">
-                <button class="button secondary" id="backToWelcomeBtn">Back</button>
-                <button class="button" id="startQuizBtn">Start Quiz</button>
-            </div>
-        </div>
+        </header>
         
-        <!-- Quiz Container -->
-        <div class="quiz-container hidden" id="quizContainer">
-            <div class="progress-container">
-                <div>Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></div>
-                <div class="progress-bar">
-                    <div class="progress" id="progressBar"></div>
+        <main>
+            <!-- Welcome Screen -->
+            <section class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-content">
+                    <h2>Master Penetration Testing</h2>
+                    <p>Test your knowledge, identify weaknesses, and improve your skills through adaptive learning.</p>
+                    
+                    <div class="stats-overview" id="statsOverview">
+                        <h3>Your Progress</h3>
+                        <div class="stats-cards">
+                            <div class="stats-card">
+                                <div class="stats-card-header">
+                                    <i class="fas fa-trophy"></i>
+                                    <h4>Quizzes Completed</h4>
+                                </div>
+                                <p class="stats-value" id="quizzesCompleted">0</p>
+                            </div>
+                            <div class="stats-card">
+                                <div class="stats-card-header">
+                                    <i class="fas fa-chart-line"></i>
+                                    <h4>Overall Score</h4>
+                                </div>
+                                <p class="stats-value" id="overallScore">0%</p>
+                            </div>
+                            <div class="stats-card">
+                                <div class="stats-card-header">
+                                    <i class="fas fa-fire"></i>
+                                    <h4>Current Streak</h4>
+                                </div>
+                                <p class="stats-value" id="currentStreak">0 days</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chapter-performance" id="chapterPerformance">
+                        <h3>Chapter Performance</h3>
+                        <div class="chapter-bars" id="chapterBars">
+                            <!-- Chapter performance bars will be added here -->
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="button primary" id="startBtn">
+                            <i class="fas fa-play"></i> Start Quiz
+                        </button>
+                        <button class="button secondary" id="reviewBtn">
+                            <i class="fas fa-history"></i> Review Mistakes
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </section>
             
-            <div class="question-container">
-                <div class="question" id="questionText"></div>
-                <div class="options" id="optionsContainer"></div>
-            </div>
+            <!-- Chapter Selection Screen -->
+            <section class="chapter-selection hidden" id="chapterSelection">
+                <div class="container">
+                    <h2>Choose Your Focus</h2>
+                    <p>Select which topics you want to be tested on and adjust your quiz settings.</p>
+                    
+                    <div class="quiz-options">
+                        <div class="quiz-mode">
+                            <h3>Quiz Mode</h3>
+                            <div class="mode-selector">
+                                <div class="mode-option selected" data-mode="standard">
+                                    <i class="fas fa-random"></i>
+                                    <span>Standard</span>
+                                    <p>Random selection of questions</p>
+                                </div>
+                                <div class="mode-option" data-mode="adaptive">
+                                    <i class="fas fa-bullseye"></i>
+                                    <span>Adaptive</span>
+                                    <p>Focus on your weak areas</p>
+                                </div>
+                                <div class="mode-option" data-mode="review">
+                                    <i class="fas fa-redo"></i>
+                                    <span>Review</span>
+                                    <p>Questions you've missed before</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chapter-options-container">
+                            <h3>Choose Chapters</h3>
+                            <div class="chapter-options" id="chapterOptionsContainer">
+                                <!-- Chapter options will be dynamically added here -->
+                            </div>
+                        </div>
+                        
+                        <div class="quiz-settings">
+                            <h3>Quiz Settings</h3>
+                            <div class="setting-item">
+                                <label for="questionCount">Number of questions:</label>
+                                <select id="questionCount">
+                                    <option value="5">5 questions</option>
+                                    <option value="10" selected>10 questions</option>
+                                    <option value="15">15 questions</option>
+                                    <option value="20">20 questions</option>
+                                    <option value="all">All available</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label for="timeLimit">Time limit per question:</label>
+                                <select id="timeLimit">
+                                    <option value="0">No time limit</option>
+                                    <option value="30">30 seconds</option>
+                                    <option value="60">1 minute</option>
+                                    <option value="120">2 minutes</option>
+                                </select>
+                            </div>
+                            <div class="setting-item checkbox">
+                                <input type="checkbox" id="enableConfidence">
+                                <label for="enableConfidence">Enable confidence rating</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="buttons-container">
+                        <button class="button secondary" id="backToWelcomeBtn">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button class="button primary" id="startQuizBtn">
+                            <i class="fas fa-play"></i> Start Quiz
+                        </button>
+                    </div>
+                </div>
+            </section>
             
-            <button class="button hidden" id="nextBtn">Next Question</button>
-        </div>
+            <!-- Quiz Container -->
+            <section class="quiz-container hidden" id="quizContainer">
+                <div class="container">
+                    <div class="quiz-header">
+                        <div class="progress-container">
+                            <div class="progress-info">
+                                <span>Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></span>
+                                <span id="timerDisplay" class="hidden"><i class="fas fa-clock"></i> <span id="timeRemaining">60</span>s</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress" id="progressBar"></div>
+                            </div>
+                        </div>
+                        <div class="quiz-chapter" id="currentChapter">Chapter Name</div>
+                    </div>
+                    
+                    <div class="confidence-rating hidden" id="confidenceRating">
+                        <h3>How confident are you about this topic?</h3>
+                        <div class="confidence-scale">
+                            <div class="confidence-option" data-confidence="1">
+                                <i class="far fa-frown"></i>
+                                <span>Not at all</span>
+                            </div>
+                            <div class="confidence-option" data-confidence="2">
+                                <i class="far fa-meh"></i>
+                                <span>Somewhat</span>
+                            </div>
+                            <div class="confidence-option" data-confidence="3">
+                                <i class="far fa-smile"></i>
+                                <span>Confident</span>
+                            </div>
+                            <div class="confidence-option" data-confidence="4">
+                                <i class="far fa-grin-stars"></i>
+                                <span>Very confident</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="question-container">
+                        <div class="question" id="questionText"></div>
+                        <div class="options" id="optionsContainer"></div>
+                    </div>
+                    
+                    <button class="button primary hidden" id="nextBtn">
+                        <span>Next Question</span> <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Results Container -->
+            <section class="results-container hidden" id="resultsContainer">
+                <div class="container">
+                    <div class="results-header">
+                        <h2>Quiz Results</h2>
+                        <div class="result-summary" id="resultSummary"></div>
+                    </div>
+                    
+                    <div class="results-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Correct</h3>
+                                <p id="correctCount">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Incorrect</h3>
+                                <p id="incorrectCount">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Accuracy</h3>
+                                <p id="accuracyValue">0%</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Time Spent</h3>
+                                <p id="timeSpent">0 min</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="weakness-analysis" id="weaknessAnalysis">
+                        <h3>Areas to Improve</h3>
+                        <div class="weakness-tags" id="weaknessTags">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                    
+                    <div class="result-details" id="resultDetails">
+                        <!-- Answer review details will be here -->
+                    </div>
+                    
+                    <div class="buttons-container">
+                        <button class="button secondary" id="newQuizBtn">
+                            <i class="fas fa-home"></i> Home
+                        </button>
+                        <button class="button" id="focusWeaknessBtn">
+                            <i class="fas fa-bullseye"></i> Focus on Weaknesses
+                        </button>
+                        <button class="button primary" id="restartBtn">
+                            <i class="fas fa-redo"></i> Restart Quiz
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Review Mistakes Screen -->
+            <section class="review-mistakes hidden" id="reviewMistakesScreen">
+                <div class="container">
+                    <h2>Review Past Mistakes</h2>
+                    <p>These are questions you've had trouble with in the past. Practice makes perfect!</p>
+                    
+                    <div class="filter-controls">
+                        <div class="filter-item">
+                            <label for="chapterFilter">Chapter:</label>
+                            <select id="chapterFilter">
+                                <option value="all">All Chapters</option>
+                                <!-- Will be filled dynamically -->
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label for="dateFilter">Time period:</label>
+                            <select id="dateFilter">
+                                <option value="all">All Time</option>
+                                <option value="week">Last Week</option>
+                                <option value="month">Last Month</option>
+                                <option value="three_months">Last 3 Months</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="missed-questions" id="missedQuestions">
+                        <!-- Will be filled dynamically -->
+                        <div class="no-mistakes-message">
+                            <i class="fas fa-check-circle"></i>
+                            <p>Great job! You haven't missed any questions yet.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="buttons-container">
+                        <button class="button secondary" id="backToHomeBtn">
+                            <i class="fas fa-arrow-left"></i> Back to Home
+                        </button>
+                        <button class="button primary" id="practiceSelectedBtn">
+                            <i class="fas fa-graduation-cap"></i> Practice Selected
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
         
-        <!-- Results Container -->
-        <div class="results-container hidden" id="resultsContainer">
-            <div class="result-summary" id="resultSummary"></div>
-            <div class="result-details" id="resultDetails"></div>
-            <div class="buttons-container">
-                <button class="button secondary" id="newQuizBtn">New Quiz</button>
-                <button class="button" id="restartBtn">Restart Same Quiz</button>
-            </div>
-        </div>
+        <footer>
+            <p>&copy; 2025 PentestPro Learning System</p>
+            <p>Keep learning, keep testing, stay secure.</p>
+        </footer>
     </div>
 
     <!-- Load scripts -->
+    <script src="js/storage.js"></script>
     <script src="js/chapters.js"></script>
+    <script src="js/statistics.js"></script>
     <script src="js/questions/footprinting-scanning.js"></script>
     <script src="js/questions/information-gathering.js"></script>
-    <script src="js/quiz.js"></script>
+    <script src="js/quiz-enhanced.js"></script>
+    <script src="js/ui.js"></script>
 </body>
 </html>
