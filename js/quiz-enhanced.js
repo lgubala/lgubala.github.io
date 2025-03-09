@@ -23,6 +23,7 @@ const newQuizBtn = document.getElementById('newQuizBtn');
 const focusWeaknessBtn = document.getElementById('focusWeaknessBtn');
 const backToHomeBtn = document.getElementById('backToHomeBtn');
 const practiceSelectedBtn = document.getElementById('practiceSelectedBtn');
+const newRandomBtn = document.getElementById('newRandomBtn');
 
 /**
  * Initialize the quiz system
@@ -84,6 +85,13 @@ function setupEventListeners() {
     
     if (practiceSelectedBtn) {
         practiceSelectedBtn.addEventListener('click', practiceSelectedQuestions);
+    }
+
+    if (newRandomBtn) {
+        newRandomBtn.addEventListener('click', function() {
+            // Go back to chapter selection to start a completely new quiz
+            UI.showScreen('chapterSelection');
+        });
     }
 }
 
@@ -441,16 +449,22 @@ function showResults() {
             
             // Mark user selection and correct answer
             if (optionIndex === userAnswer) {
-                reviewOption.classList.add('selected');
-                if (!isCorrect) {
-                    reviewOption.innerHTML = `❌ ${option}`;
-                } else {
+                // This is what the user selected
+                if (isCorrect) {
+                    // User selected the correct answer
+                    reviewOption.classList.add('correct');
                     reviewOption.innerHTML = `✓ ${option}`;
+                } else {
+                    // User selected the wrong answer
+                    reviewOption.classList.add('selected');
+                    reviewOption.innerHTML = `❌ ${option}`;
                 }
             } else if (optionIndex === question.correctAnswer) {
+                // This is the correct answer (but not what the user selected)
                 reviewOption.classList.add('correct');
                 reviewOption.innerHTML = `✓ ${option}`;
             } else {
+                // This is just a regular option
                 reviewOption.textContent = option;
             }
             

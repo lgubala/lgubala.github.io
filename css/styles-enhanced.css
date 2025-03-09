@@ -1408,7 +1408,7 @@ footer p {
 
 /* Utility Classes */
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .confidence-indicator {
@@ -1565,4 +1565,162 @@ footer p {
 .factor span {
     font-weight: 600;
     color: var(--text-muted);
+}
+
+/* Chapter Creator Styles */
+.chapter-creator {
+    background-color: var(--option-bg);
+    border-radius: 10px;
+    padding: 25px;
+    margin-top: 40px;
+    margin-bottom: 30px;
+}
+
+.chapter-creator h3 {
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    margin: 20px 0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.upload-area:hover {
+    background-color: var(--option-hover);
+}
+
+.upload-area i {
+    font-size: 48px;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+
+.chapter-details {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--container-bg);
+    color: var(--text-color);
+}
+
+.processing-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 0;
+    padding: 15px;
+    background-color: var(--container-bg);
+    border-radius: 8px;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--primary-color);
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.prompt-container {
+    position: relative;
+    margin-top: 10px;
+}
+
+.prompt-container pre {
+    background-color: var(--container-bg);
+    padding: 15px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.button.small {
+    padding: 5px 10px;
+    font-size: 14px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.ai-prompt-area, .ai-response-area {
+    margin-top: 25px;
+}
+
+.ai-response-area textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--container-bg);
+    color: var(--text-color);
+    resize: vertical;
+    margin-bottom: 15px;
+}
+
+.result-area {
+    margin-top: 25px;
+    padding: 15px;
+    background-color: var(--container-bg);
+    border-radius: 8px;
+}
+
+.file-download {
+    margin-bottom: 15px;
+}
+
+.file-download a {
+    color: var(--primary-color);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.chapter-instruction {
+    padding: 15px;
+    background-color: var(--option-bg);
+    border-radius: 6px;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+
+.upload-actions {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+}
+
+
+#processingStatus {
+    display: none;
 }

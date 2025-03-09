@@ -6,8 +6,121 @@
     <title>PentestPro - Interactive Learning</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/styles-enhanced.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
+    <script>
+        window.PptxJsHandler = {
+            async extractText(arrayBuffer) {
+                try {
+                    const zip = new JSZip();
+                    
+                    // More robust loading with better error handling
+                    let zipData;
+                    try {
+                        zipData = await zip.loadAsync(arrayBuffer);
+                    } catch (zipError) {
+                        console.error("JSZip loading error:", zipError);
+                        throw new Error("Failed to open PowerPoint file as a ZIP archive. The file may be corrupted or not a valid PPTX file.");
+                    }
+                    
+                    // Check if this looks like a PowerPoint file (should have ppt/presentation.xml)
+                    if (!zipData.files['ppt/presentation.xml']) {
+                        throw new Error("This file doesn't appear to be a valid PowerPoint file (missing presentation.xml)");
+                    }
+                    
+                    // Find all XML files that contain slide content
+                    const slideFiles = Object.keys(zipData.files)
+                        .filter(filename => filename.startsWith('ppt/slides/slide') && filename.endsWith('.xml'))
+                        .sort((a, b) => {
+                            // Extract slide numbers, defaulting to 0 if parsing fails
+                            const matchA = a.match(/slide(\d+)\.xml/);
+                            const matchB = b.match(/slide(\d+)\.xml/);
+                            const numA = matchA ? parseInt(matchA[1]) : 0;
+                            const numB = matchB ? parseInt(matchB[1]) : 0;
+                            return numA - numB;
+                        });
+                    
+                    if (slideFiles.length === 0) {
+                        console.warn("No slide content files found in the PowerPoint");
+                        // Return a fallback message rather than failing
+                        return ["[PowerPoint has no extractable slides]"];
+                    }
+                    
+                    // Extract text from each slide
+                    const slideTexts = [];
+                    let extractedAny = false;
+                    
+                    for (const slideFile of slideFiles) {
+                        try {
+                            // Get the file content
+                            const content = await zipData.files[slideFile].async('text');
+                            
+                            // Extract text from the slide
+                            const textContent = this.extractTextFromSlideXML(content);
+                            
+                            if (textContent.trim()) {
+                                slideTexts.push(`Slide ${slideTexts.length + 1}: ${textContent}`);
+                                extractedAny = true;
+                            } else {
+                                slideTexts.push(`Slide ${slideTexts.length + 1}: [No text content]`);
+                            }
+                        } catch (slideError) {
+                            console.warn(`Error processing slide ${slideFile}:`, slideError);
+                            slideTexts.push(`Slide ${slideTexts.length + 1}: [Error extracting content]`);
+                        }
+                    }
+                    
+                    if (!extractedAny) {
+                        console.warn("Could not extract meaningful text from any slides");
+                        return ["[Could not extract text content from PowerPoint]"];
+                    }
+                    
+                    return slideTexts;
+                } catch (error) {
+                    console.error('Error parsing PowerPoint:', error);
+                    throw new Error('Failed to parse PowerPoint file');
+                }
+            },
+            
+            // Improved text extraction from slide XML
+            extractTextFromSlideXML(xml) {
+                // More comprehensive regex to handle different text tag formats
+                const textMatches = [];
+                
+                // Match standard text content
+                const standardTextRegex = /<a:t>([^<]*)<\/a:t>/g;
+                let match;
+                while ((match = standardTextRegex.exec(xml)) !== null) {
+                    textMatches.push(match[1]);
+                }
+                
+                // Match text with preserved whitespace
+                const preservedSpaceRegex = /<a:t xml:space="preserve">([^<]*)<\/a:t>/g;
+                while ((match = preservedSpaceRegex.exec(xml)) !== null) {
+                    textMatches.push(match[1]);
+                }
+                
+                // Match paragraph breaks with line breaks
+                const paragraphRegex = /<a:p>/g;
+                const paragraphCount = (xml.match(paragraphRegex) || []).length;
+                
+                // Join text with appropriate spacing
+                let text = textMatches.join(' ');
+                
+                // Clean up text: handle escaped characters and normalize whitespace
+                text = text
+                    .replace(/&amp;/g, '&')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&quot;/g, '"')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                    
+                return text;
+            }
+        };
+    </script>
     <div class="app-container">
         <header>
             <div class="logo">
@@ -244,8 +357,11 @@
                         <button class="button" id="focusWeaknessBtn">
                             <i class="fas fa-bullseye"></i> Weaknesses
                         </button>
+                        <button class="button" id="newRandomBtn">
+                            <i class="fas fa-random"></i> New Random Quiz
+                        </button>
                         <button class="button primary" id="restartBtn">
-                            <i class="fas fa-redo"></i> Restart
+                            <i class="fas fa-redo"></i> Retry Same Questions
                         </button>
                     </div>
                 </div>
@@ -294,6 +410,65 @@
                     </div>
                 </div>
             </section>
+
+            <div class="chapter-creator">
+                <h3>Create New Chapter from PowerPoint</h3>
+                <p>Upload a PowerPoint presentation to generate quiz questions.</p>
+                
+                <div class="upload-area" id="uploadArea">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <p>Drag & drop PowerPoint files here or click to browse</p>
+                  <input type="file" id="fileUpload" accept=".ppt,.pptx" hidden>
+                </div>
+                
+                <div class="chapter-details hidden" id="chapterDetails">
+                  <div class="form-group">
+                    <label for="chapterTitle">Chapter Title:</label>
+                    <input type="text" id="chapterTitle" placeholder="Enter a title for this chapter">
+                  </div>
+                  <div class="form-group">
+                    <label for="chapterId">Chapter ID (no spaces):</label>
+                    <input type="text" id="chapterId" placeholder="enterChapterIdWithoutSpaces">
+                  </div>
+                </div>
+                
+                <div class="processing-status hidden" id="processingStatus">
+                  <div class="spinner"></div>
+                  <p>Processing presentation... <span id="processingInfo"></span></p>
+                </div>
+                
+                <div class="ai-prompt-area hidden" id="aiPromptArea">
+                  <h4>AI Prompt</h4>
+                  <p>Copy this prompt and paste it into ChatGPT or another AI assistant:</p>
+                  <div class="prompt-container">
+                    <pre id="aiPrompt"></pre>
+                    <button class="button small" id="copyPromptBtn">
+                      <i class="fas fa-copy"></i> Copy
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="ai-response-area hidden" id="aiResponseArea">
+                  <h4>Paste AI Response</h4>
+                  <p>Paste the AI's response below:</p>
+                  <textarea id="aiResponse" rows="10" placeholder="Paste the AI's response here..."></textarea>
+                  <button class="button primary" id="generateFilesBtn" disabled>
+                    <i class="fas fa-magic"></i> Generate Chapter Files
+                  </button>
+                </div>
+                
+                <div class="result-area hidden" id="resultArea">
+                  <h4>Files Generated</h4>
+                  <div class="file-download" id="questionFileDownload"></div>
+                  <div class="chapter-instruction" id="chapterInstruction"></div>
+                </div>
+                
+                <div class="upload-actions">
+                  <button class="button primary" id="processFileBtn" disabled>
+                    <i class="fas fa-cogs"></i> Process File
+                  </button>
+                </div>
+              </div>
         </main>
         
         <footer>
@@ -310,5 +485,6 @@
     <script src="js/questions/information-gathering.js"></script>
     <script src="js/quiz-enhanced.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/chapter-generator.js"></script>
 </body>
 </html>
