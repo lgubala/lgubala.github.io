@@ -505,5 +505,521 @@ quizDataByChapter.footprintingScanning = [
         correctAnswer: 1,
         chapter: "Footprinting & Scanning",
         explanation: "You would use the '-sU' option in Nmap when you need to scan for services that typically use UDP rather than TCP. Many important services use UDP, such as DNS (53), SNMP (161/162), and DHCP (67/68). UDP scanning is important for a comprehensive security assessment, as these services might have vulnerabilities that would be missed by TCP-only scans."
+    },
+    {
+        question: "Which of the following protocols operates at the Application Layer (Layer 7) of the OSI model?",
+        options: [
+            "TCP",
+            "IP",
+            "Ethernet",
+            "HTTP"
+        ],
+        correctAnswer: 3,
+        chapter: "Footprinting & Scanning",
+        explanation: "HTTP (Hypertext Transfer Protocol) operates at the Application Layer (Layer 7) of the OSI model. Other examples of Application Layer protocols include FTP, SMTP, DNS, and SSH."
+    },
+    {
+        question: "Which OSI layer is responsible for end-to-end communication and provides flow control?",
+        options: [
+            "Network Layer (Layer 3)",
+            "Transport Layer (Layer 4)",
+            "Session Layer (Layer 5)",
+            "Data Link Layer (Layer 2)"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The Transport Layer (Layer 4) ensures end-to-end communication and provides flow control. It's responsible for reliable data transfer, segmentation and reassembly, and error recovery. TCP and UDP operate at this layer."
+    },
+    {
+        question: "What port number is used for POP3 (Post Office Protocol version 3)?",
+        options: [
+            "25",
+            "110",
+            "143",
+            "993"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 110 is the standard port used for POP3 (Post Office Protocol version 3), which is used for retrieving emails from a mail server."
+    },
+    {
+        question: "What port number is used for IMAP (Internet Message Access Protocol)?",
+        options: [
+            "110",
+            "143",
+            "443",
+            "587"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 143 is the standard port used for IMAP (Internet Message Access Protocol), which is used for retrieving emails from a mail server with more functionality than POP3."
+    },
+    {
+        question: "What port is used for LDAP (Lightweight Directory Access Protocol)?",
+        options: [
+            "389",
+            "443",
+            "636",
+            "3306"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 389 is the standard port used for LDAP (Lightweight Directory Access Protocol), which is used for accessing and maintaining distributed directory information services."
+    },
+    {
+        question: "What port is used for HTTPS with LDAP (LDAPS)?",
+        options: [
+            "389",
+            "443",
+            "636",
+            "3306"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 636 is used for LDAPS, which is LDAP over SSL/TLS. It provides secure communication for directory services."
+    },
+    {
+        question: "What does the flag combination '-sS -T4' mean in Nmap?",
+        options: [
+            "Perform a slow SYN scan",
+            "Perform a stealthy SYN scan with aggressive timing",
+            "Scan TCP and UDP ports simultaneously",
+            "Perform a full connect scan with normal timing"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The flag combination '-sS -T4' in Nmap means to perform a TCP SYN scan (half-open scan) with aggressive timing. The -sS option specifies a SYN scan, and -T4 represents an aggressive timing template that speeds up the scan."
+    },
+    {
+        question: "What is the practical purpose of using the '--reason' flag in Nmap?",
+        options: [
+            "To explain why Nmap is running a particular scan type",
+            "To provide the reason why a port is determined to be open, closed, or filtered",
+            "To justify the need for a security scan to system administrators",
+            "To explain why certain ports are being targeted"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The '--reason' flag in Nmap provides the reason why Nmap determined a port to be in a particular state (open, closed, or filtered). This is particularly useful for debugging and understanding scan results, especially when ports are shown as filtered or when you're trying to understand why a port appears open."
+    },
+    {
+        question: "What port is used for Microsoft SQL Server?",
+        options: [
+            "1433",
+            "3306",
+            "5432",
+            "8080"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 1433 is the default port used for Microsoft SQL Server. It's important to know this port for database-related security assessments."
+    },
+    {
+        question: "What port is typically used for PostgreSQL?",
+        options: [
+            "1433",
+            "3306",
+            "5432",
+            "27017"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 5432 is the default port used for PostgreSQL database connections. PostgreSQL is a powerful, open-source object-relational database system."
+    },
+    {
+        question: "What port is used for MongoDB?",
+        options: [
+            "3306",
+            "5432",
+            "8080",
+            "27017"
+        ],
+        correctAnswer: 3,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 27017 is the default port used for MongoDB database connections. MongoDB is a popular NoSQL database that uses a document-oriented data model."
+    },
+    {
+        question: "What does the '-p-' flag indicate in Nmap?",
+        options: [
+            "Scan only privileged ports (0-1023)",
+            "Scan all 65535 ports",
+            "Skip port scanning",
+            "Scan only ports used by malware"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The '-p-' flag in Nmap indicates that all 65535 ports should be scanned, not just the default selection of most common ports. This is more comprehensive but takes longer to complete."
+    },
+    {
+        question: "Which Nmap command would scan for the Heartbleed vulnerability on a target?",
+        options: [
+            "nmap --script vuln 192.168.1.1",
+            "nmap --script ssl-heartbleed 192.168.1.1",
+            "nmap -sV --script=heartbleed 192.168.1.1",
+            "nmap -O --heartbleed 192.168.1.1"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "The command 'nmap -sV --script=heartbleed 192.168.1.1' would scan for the Heartbleed vulnerability on a target. The --script=heartbleed option tells Nmap to use the specific NSE script that checks for this vulnerability, and -sV enables version detection which helps identify the service."
+    },
+    {
+        question: "What port number is used for SNMP (Simple Network Management Protocol)?",
+        options: [
+            "25",
+            "123",
+            "161/162",
+            "389"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "Ports 161 and 162 are used for SNMP (Simple Network Management Protocol). Port 161 is used for queries and commands, while port 162 is used for traps (notifications)."
+    },
+    {
+        question: "What port is used for NTP (Network Time Protocol)?",
+        options: [
+            "53",
+            "123",
+            "161",
+            "389"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 123 is used for NTP (Network Time Protocol), which is used to synchronize the clocks of computer systems over packet-switched, variable-latency data networks."
+    },
+    {
+        question: "Which OSI layer is primarily concerned with physical connections and transmission of raw bit streams?",
+        options: [
+            "Physical Layer (Layer 1)",
+            "Data Link Layer (Layer 2)",
+            "Network Layer (Layer 3)",
+            "Transport Layer (Layer 4)"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "The Physical Layer (Layer 1) is primarily concerned with physical connections and the transmission of raw bit streams. It deals with hardware specifications, cabling, connectors, electrical signaling, and the physical aspects of data transmission."
+    },
+    {
+        question: "Which Nmap scan type uses FIN, PSH, and URG flags set in TCP packets?",
+        options: [
+            "SYN scan (-sS)",
+            "FIN scan (-sF)",
+            "XMAS scan (-sX)",
+            "NULL scan (-sN)"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "The XMAS scan (-sX) in Nmap uses TCP packets with the FIN, PSH, and URG flags set. It's called an XMAS scan because the flags are 'lit up' like a Christmas tree. This scan type is used to bypass certain non-stateful firewalls and packet filtering devices."
+    },
+    {
+        question: "What does the '-sn' flag do in Nmap?",
+        options: [
+            "Performs service detection",
+            "Disables port scanning and only does host discovery (ping scan)",
+            "Performs a SYN scan on the network",
+            "Scans for vulnerabilities"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The '-sn' flag in Nmap disables port scanning and only performs host discovery (ping scan). It's useful when you just want to discover which hosts are online without scanning their ports."
+    },
+    {
+        question: "What is the typical TTL value for Windows operating systems?",
+        options: [
+            "64",
+            "128",
+            "255",
+            "32"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The typical initial TTL value for Windows operating systems is 128. This can be used in OS fingerprinting to help identify the operating system of a remote host by examining the TTL value in response packets."
+    },
+    {
+        question: "What is the typical TTL value for Linux operating systems?",
+        options: [
+            "64",
+            "128",
+            "255",
+            "32"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "The typical initial TTL value for Linux and Unix-based operating systems is 64. This can be useful in OS fingerprinting to help identify the operating system of a remote host."
+    },
+    {
+        question: "What is the purpose of the 'source port' field in a TCP header?",
+        options: [
+            "It identifies the application or service on the sender's machine",
+            "It identifies the application or service on the receiver's machine",
+            "It specifies the size of the data being transmitted",
+            "It indicates the priority of the packet"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "The 'source port' field in a TCP header identifies the application or service on the sender's machine that originated the packet. It's a 16-bit field that can contain values from 0 to 65535."
+    },
+    {
+        question: "Which command would you use to scan a target using a specific source port in Nmap?",
+        options: [
+            "nmap --source-port 53 192.168.1.1",
+            "nmap -g 53 192.168.1.1",
+            "nmap --port-source 53 192.168.1.1",
+            "nmap -s 53 192.168.1.1"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The command 'nmap -g 53 192.168.1.1' is used to scan a target using a specific source port in Nmap. In this case, the source port is set to 53 (DNS). This can be useful for bypassing simple firewall rules that allow traffic from specific source ports."
+    },
+    {
+        question: "What is the main difference between TCP ACK scan (-sA) and TCP SYN scan (-sS) in Nmap?",
+        options: [
+            "ACK scan is faster than SYN scan",
+            "SYN scan establishes a full connection while ACK scan doesn't",
+            "ACK scan is primarily used to map firewall rules rather than determine open ports",
+            "SYN scan only works on Linux systems while ACK scan works on all systems"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "The main difference is that TCP ACK scan (-sA) is primarily used to map firewall rules rather than determine if ports are open. It sends ACK packets (which would normally acknowledge data in an established connection) and uses the responses to determine if ports are filtered or unfiltered. SYN scan (-sS), on the other hand, is used to determine if ports are open, closed, or filtered by sending SYN packets."
+    },
+    {
+        question: "Which field in an IP packet contains information about the protocol of the encapsulated data?",
+        options: [
+            "Type of Service field",
+            "Protocol field",
+            "Identification field",
+            "Time-to-Live field"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The Protocol field in an IP packet header contains information about the protocol of the encapsulated data. It's an 8-bit value that identifies the higher-layer protocol that will receive the packet after IP processing. Common values include 6 for TCP, 17 for UDP, and 1 for ICMP."
+    },
+    {
+        question: "What port is commonly used for Telnet?",
+        options: [
+            "21",
+            "22",
+            "23",
+            "25"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 23 is commonly used for Telnet, which is a protocol used for remote terminal connections. However, Telnet sends data in plaintext, making it insecure, and it's generally recommended to use SSH (port 22) instead for secure remote connections."
+    },
+    {
+        question: "What would the following Nmap command do: 'nmap --script smb-vuln* -p 445 192.168.1.1'?",
+        options: [
+            "Scan all ports on 192.168.1.1 for SMB vulnerabilities",
+            "Create a vulnerability report for the entire 192.168.1.0/24 network",
+            "Scan port 445 on 192.168.1.1 for SMB-related vulnerabilities using NSE scripts",
+            "Exploit SMB vulnerabilities on the target system"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "The command 'nmap --script smb-vuln* -p 445 192.168.1.1' scans port 445 (SMB) on the target 192.168.1.1 for SMB-related vulnerabilities. The '--script smb-vuln*' part tells Nmap to use all NSE scripts that start with 'smb-vuln', which are scripts designed to check for various SMB vulnerabilities."
+    },
+    {
+        question: "Which port is used for TFTP (Trivial File Transfer Protocol)?",
+        options: [
+            "20",
+            "21",
+            "69",
+            "161"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 69 is used for TFTP (Trivial File Transfer Protocol), which is a simple protocol for transferring files with minimal overhead. Unlike FTP, it doesn't have authentication mechanisms."
+    },
+    {
+        question: "What port is commonly used for Kerberos authentication?",
+        options: [
+            "53",
+            "88",
+            "389",
+            "636"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "Port 88 is commonly used for Kerberos authentication. Kerberos is a network authentication protocol designed to provide strong authentication for client/server applications by using secret-key cryptography."
+    },
+    {
+        question: "What does the '--max-retries' option in Nmap control?",
+        options: [
+            "The maximum number of hosts to scan simultaneously",
+            "The maximum number of attempts to send a probe packet before giving up",
+            "The maximum number of open ports to report",
+            "The maximum scan duration in minutes"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The '--max-retries' option in Nmap controls the maximum number of attempts to send a probe packet before giving up on a port or host. By default, Nmap will retry a probe if it doesn't receive a response. Decreasing this value can make scans faster but potentially less accurate, especially on congested networks."
+    },
+    {
+        question: "What is the purpose of the SYN flag in a TCP packet?",
+        options: [
+            "To acknowledge received data",
+            "To indicate the end of a connection",
+            "To initiate a connection",
+            "To reset a connection"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "The SYN (Synchronize) flag in a TCP packet is used to initiate a connection as part of the TCP three-way handshake. When a client wants to establish a connection with a server, it sends a packet with the SYN flag set."
+    },
+    {
+        question: "What is the purpose of the ACK flag in a TCP packet?",
+        options: [
+            "To acknowledge received data",
+            "To indicate the end of a connection",
+            "To initiate a connection",
+            "To reset a connection"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "The ACK (Acknowledge) flag in a TCP packet is used to acknowledge received data. It confirms that the data has been received successfully and is used throughout the TCP connection to ensure reliable delivery."
+    },
+    {
+        question: "What is the purpose of the FIN flag in a TCP packet?",
+        options: [
+            "To acknowledge received data",
+            "To indicate the end of a connection",
+            "To initiate a connection",
+            "To reset a connection"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The FIN (Finish) flag in a TCP packet is used to indicate the end of a connection. When a device wants to close a connection gracefully, it sends a packet with the FIN flag set."
+    },
+    {
+        question: "What is the purpose of the RST flag in a TCP packet?",
+        options: [
+            "To acknowledge received data",
+            "To indicate the end of a connection",
+            "To initiate a connection",
+            "To reset a connection"
+        ],
+        correctAnswer: 3,
+        chapter: "Footprinting & Scanning",
+        explanation: "The RST (Reset) flag in a TCP packet is used to reset a connection. It's sent when something unexpected happens and the connection needs to be immediately terminated, or when a connection attempt is made to a closed port."
+    },
+    {
+        question: "Which of the following correctly represents the stages of a TCP three-way handshake?",
+        options: [
+            "SYN → SYN-ACK → ACK",
+            "ACK → SYN → FIN",
+            "SYN → ACK → FIN",
+            "RST → SYN → ACK"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "The TCP three-way handshake consists of the following stages: (1) The client sends a SYN packet to the server, (2) The server responds with a SYN-ACK packet, (3) The client sends an ACK packet to the server. After these three steps, the connection is established."
+    },
+    {
+        question: "Which Nmap scan option would you use to determine the exact version of services running on open ports?",
+        options: [
+            "-A",
+            "-O",
+            "-sV",
+            "-T4"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "The -sV option in Nmap is used to determine the exact version of services running on open ports. This version detection helps identify potential vulnerabilities associated with specific service versions."
+    },
+    {
+        question: "If the target's firewall is blocking ICMP echo requests, which Nmap option would be most useful for host discovery?",
+        options: [
+            "-PS (TCP SYN Ping)",
+            "-PE (ICMP Echo Ping)",
+            "-sP (Ping Scan)",
+            "-O (OS Detection)"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "If the target's firewall is blocking ICMP echo requests, the -PS option (TCP SYN Ping) would be most useful for host discovery. This option sends TCP SYN packets to the target, which may bypass firewalls that block ICMP but allow TCP traffic."
+    },
+    {
+        question: "Which protocol operates at both the Application layer and the Transport layer of the OSI model?",
+        options: [
+            "HTTP",
+            "IP",
+            "TCP",
+            "None, protocols operate at only one layer"
+        ],
+        correctAnswer: 3,
+        chapter: "Footprinting & Scanning",
+        explanation: "None. According to the OSI model, protocols operate at only one specific layer. For example, HTTP operates at the Application layer (Layer 7), while TCP operates at the Transport layer (Layer 4). Each protocol has a specific function within its respective layer."
+    },
+    {
+        question: "What is a 'fragmented packet' in the context of IP?",
+        options: [
+            "A packet that has been broken into smaller pieces to traverse networks with different MTU sizes",
+            "A packet that has been corrupted during transmission",
+            "A packet that contains fragmented data from multiple applications",
+            "A packet that has been partially received"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "A 'fragmented packet' in the context of IP is a packet that has been broken into smaller pieces to traverse networks with different Maximum Transmission Unit (MTU) sizes. When a packet is too large for a network segment, it is divided into smaller fragments, each with its own IP header, and then reassembled at the destination."
+    },
+    {
+        question: "What information would the 'identification' field in an IP header provide?",
+        options: [
+            "The type of service requested for the packet",
+            "The unique identifier assigned to the packet for reassembly of fragments",
+            "The protocol used in the payload (TCP, UDP, etc.)",
+            "The priority level of the packet"
+        ],
+        correctAnswer: 1,
+        chapter: "Footprinting & Scanning",
+        explanation: "The 'identification' field in an IP header provides a unique identifier assigned to the packet, which is used for reassembling fragmented packets. All fragments of the same original packet will have the same identification value."
+    },
+    {
+        question: "When conducting a penetration test, what is the significance of the 'More Fragments' (MF) flag in an IP packet?",
+        options: [
+            "It indicates that more fragments follow in a fragmented packet",
+            "It signifies that the packet contains more data than usual",
+            "It requests the receiver to send more fragments",
+            "It indicates that the packet is part of a fragmentation attack"
+        ],
+        correctAnswer: 0,
+        chapter: "Footprinting & Scanning",
+        explanation: "The 'More Fragments' (MF) flag in an IP packet indicates that more fragments follow in a fragmented packet. When set to 1, it means this fragment is not the last one in the sequence, and more fragments of the original packet are coming. When set to 0, it indicates this is the last (or only) fragment."
+    },
+    {
+        question: "What is the purpose of the 'sequence number' field in a TCP header?",
+        options: [
+            "To identify the port number of the application",
+            "To specify the amount of data being sent",
+            "To track the order of packets and ensure reliable delivery",
+            "To identify the specific TCP connection"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "The 'sequence number' field in a TCP header is used to track the order of packets and ensure reliable delivery. Each byte of data is assigned a sequence number, allowing the receiver to reassemble the data in the correct order, even if packets arrive out of sequence."
+    },
+    {
+        question: "What range of ports does the '-F' (fast scan) option in Nmap scan?",
+        options: [
+            "Only the 1,000 most common ports",
+            "All 65,535 ports",
+            "Only ports below 1024",
+            "Only ports specified in the nmap-services file with a probability of 0.5 or higher"
+        ],
+        correctAnswer: 3,
+        chapter: "Footprinting & Scanning",
+        explanation: "The '-F' (fast scan) option in Nmap scans only the ports specified in the nmap-services file with a probability of 0.5 or higher. This typically includes about 100 commonly used ports, making the scan much faster than the default scan of 1,000 ports."
+    },
+    {
+        question: "When would a penetration tester use the '-sI <zombie_host>' option in Nmap?",
+        options: [
+            "To scan multiple targets simultaneously",
+            "To scan from a different source IP address to remain anonymous",
+            "To conduct an idle (zombie) scan for stealthy scanning",
+            "To scan a host that is currently inactive"
+        ],
+        correctAnswer: 2,
+        chapter: "Footprinting & Scanning",
+        explanation: "A penetration tester would use the '-sI <zombie_host>' option in Nmap to conduct an idle (zombie) scan. This is an extremely stealthy scanning technique that uses a third-party host (the 'zombie') to determine if ports are open on the target. The scan packets appear to come from the zombie host, not from the actual scanner, making it difficult to trace back to the true source."
     }
 ];
