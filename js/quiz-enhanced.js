@@ -155,7 +155,7 @@ function startQuiz() {
     const selectedChapters = getSelectedChapters();
     const questionCount = document.getElementById('questionCount').value;
     timeLimitPerQuestion = parseInt(document.getElementById('timeLimit').value, 10) || 0;
-    const enableConfidence = document.getElementById('enableConfidence').checked;
+    
     
     // Check if at least one chapter is selected
     if (selectedChapters.length === 0) {
@@ -226,20 +226,11 @@ function startQuiz() {
     
     // Update UI
     document.getElementById('totalQuestions').textContent = questions.length;
-    document.getElementById('currentChapter').textContent = questions[0].chapter;
+    document.getElementById('currentChapter').textContent = questions[0].chapter;    
+
     
-    // Show/hide confidence rating
-    const confidenceRating = document.getElementById('confidenceRating');
-    if (confidenceRating) {
-        if (enableConfidence) {
-            confidenceRating.classList.remove('hidden');
-            document.querySelector('.question-container').classList.add('hidden');
-        } else {
-            confidenceRating.classList.add('hidden');
-            document.querySelector('.question-container').classList.remove('hidden');
-        }
-    }
-    
+    document.querySelector('.question-container').classList.remove('hidden');
+
     // Setup timer if enabled
     setupQuestionTimer();
     
@@ -382,16 +373,8 @@ function nextQuestion() {
     
     if (currentQuestionIndex < currentQuestions.length) {
         // Move to next question
-        loadQuestion();
-        
-        // If confidence rating is enabled, show it first
-        const confidenceRating = document.getElementById('confidenceRating');
-        const enableConfidence = document.getElementById('enableConfidence').checked;
-        
-        if (confidenceRating && enableConfidence) {
-            confidenceRating.classList.remove('hidden');
-            document.querySelector('.question-container').classList.add('hidden');
-        }
+        loadQuestion();        
+       
     } else {
         // Quiz completed - show results
         showResults();

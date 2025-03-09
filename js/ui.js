@@ -24,6 +24,20 @@ const UI = (function() {
         
         // Check if dark mode is already enabled
         applyThemePreference();
+
+
+        const resetDataBtn = document.getElementById('resetDataBtn');
+        if (resetDataBtn) {
+            resetDataBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+                    Storage.clearAllData();
+                    alert('All data has been reset.');
+                    // Refresh stats display
+                    Statistics.initializeStats();
+                }
+            });
+        }
+
     }
     
     /**

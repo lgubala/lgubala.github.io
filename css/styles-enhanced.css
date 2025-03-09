@@ -838,3 +838,87 @@ footer p {
 .hidden {
     display: none;
 }
+
+
+.confidence-indicator {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 14px;
+    color: var(--primary-color);
+    cursor: help;
+}
+
+.confidence-details {
+    margin-bottom: 40px;
+}
+
+.confidence-description {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+}
+
+.confidence-cards {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .confidence-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 992px) {
+    .confidence-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.confidence-card {
+    background-color: var(--option-bg);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.confidence-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px var(--shadow-color);
+}
+
+.confidence-gauge {
+    margin-bottom: 15px;
+}
+
+.gauge-value {
+    font-size: 36px;
+    font-weight: 700;
+}
+
+.confidence-card h4 {
+    margin-bottom: 10px;
+}
+
+.recommendation {
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 15px;
+}
+
+.confidence-factors {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+}
+
+.factor {
+    font-size: 14px;
+}
+
+.factor span {
+    font-weight: 600;
+    color: var(--text-muted);
+}

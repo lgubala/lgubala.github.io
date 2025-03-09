@@ -60,12 +60,23 @@
                         </div>
                     </div>
                     
+                    <div class="confidence-details" id="confidenceDetails">
+                        <h3>Knowledge Confidence</h3>
+                        <p class="confidence-description">This shows how confident you can be in your knowledge of each topic based on your quiz performance.</p>
+                        <div class="confidence-cards" id="confidenceCards">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                    
                     <div class="action-buttons">
                         <button class="button primary" id="startBtn">
                             <i class="fas fa-play"></i> Start Quiz
                         </button>
                         <button class="button secondary" id="reviewBtn">
                             <i class="fas fa-history"></i> Review Mistakes
+                        </button>
+                        <button class="button secondary" id="resetDataBtn">
+                            <i class="fas fa-trash-alt"></i> Reset All Data
                         </button>
                     </div>
                 </div>
@@ -127,10 +138,7 @@
                                     <option value="120">2 minutes</option>
                                 </select>
                             </div>
-                            <div class="setting-item checkbox">
-                                <input type="checkbox" id="enableConfidence">
-                                <label for="enableConfidence">Enable confidence rating</label>
-                            </div>
+                            <!-- Remove the confidence rating checkbox as we're now calculating it automatically -->
                         </div>
                     </div>
                     
@@ -161,27 +169,7 @@
                         <div class="quiz-chapter" id="currentChapter">Chapter Name</div>
                     </div>
                     
-                    <div class="confidence-rating hidden" id="confidenceRating">
-                        <h3>How confident are you about this topic?</h3>
-                        <div class="confidence-scale">
-                            <div class="confidence-option" data-confidence="1">
-                                <i class="far fa-frown"></i>
-                                <span>Not at all</span>
-                            </div>
-                            <div class="confidence-option" data-confidence="2">
-                                <i class="far fa-meh"></i>
-                                <span>Somewhat</span>
-                            </div>
-                            <div class="confidence-option" data-confidence="3">
-                                <i class="far fa-smile"></i>
-                                <span>Confident</span>
-                            </div>
-                            <div class="confidence-option" data-confidence="4">
-                                <i class="far fa-grin-stars"></i>
-                                <span>Very confident</span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Remove the confidence rating section as we're now calculating it automatically -->
                     
                     <div class="question-container">
                         <div class="question" id="questionText"></div>

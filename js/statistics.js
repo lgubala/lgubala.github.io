@@ -9,6 +9,7 @@ const Statistics = (function() {
     function initializeStats() {
         updateOverviewStats();
         updateChapterPerformance();
+        updateConfidenceDetails();
     }
     
     /**
@@ -72,6 +73,9 @@ const Statistics = (function() {
                 ? Math.round((chapterData.correct / chapterData.total) * 100) 
                 : 0;
             
+            // Calculate confidence score
+            const confidence = calculateChapterConfidence(chapterTitle);
+            
             // Create chapter bar element
             const chapterBar = document.createElement('div');
             chapterBar.className = 'chapter-bar';
@@ -86,8 +90,8 @@ const Statistics = (function() {
             
             const chapterScore = document.createElement('div');
             chapterScore.className = 'chapter-score';
-            chapterScore.textContent = chapterData.total > 0 
-                ? `${score}% (${chapterData.correct}/${chapterData.total})` 
+            chapterScore.innerHTML = chapterData.total > 0 
+                ? `${score}% (${chapterData.correct}/${chapterData.total}) <span class="confidence-indicator" title="${confidence.recommendation}">Confidence: ${confidence.score}%</span>` 
                 : 'No data';
             
             chapterInfo.appendChild(chapterName);
@@ -331,6 +335,156 @@ const Statistics = (function() {
             filterElement.appendChild(option);
         });
     }
+
+
+    /**
+     * Calculate confidence score for a chapter
+     * @param {string} chapterTitle - Chapter title
+     * @returns {Object} Confidence data including score and factors
+     */
+    function calculateChapterConfidence(chapterTitle) {
+        const stats = Storage.getStatistics();
+        const chapterData = stats.chapterPerformance[chapterTitle] || { total: 0, correct: 0 };
+        
+        // Get chapter data
+        const questionCount = chapterData.total || 0;
+        const correctCount = chapterData.correct || 0;
+        
+        // If no data, return zero confidence
+        if (questionCount === 0) {
+            return {
+                score: 0,
+                accuracy: 0,
+                coverage: 0,
+                consistency: 0,
+                recommendation: 'Start learning this topic'
+            };
+        }
+        
+        // Get total questions in this chapter
+        let totalPossibleQuestions = 0;
+        const chapterId = availableChapters.find(c => c.title === chapterTitle)?.id;
+        if (chapterId && quizDataByChapter[chapterId]) {
+            totalPossibleQuestions = quizDataByChapter[chapterId].length;
+        }
+        
+        // Calculate factors
+        const accuracy = (correctCount / questionCount) * 100;
+        const coverage = totalPossibleQuestions > 0 
+            ? (questionCount / totalPossibleQuestions) * 100 
+            : 0;
+        
+        // Get consistency (how stable your performance is)
+        // This is a simplified version - ideally we'd track performance over time
+        const consistency = 100; // Placeholder - would be calculated from history
+        
+        // Calculate overall confidence score (weighted average of factors)
+        const accuracyWeight = 0.6;
+        const coverageWeight = 0.3;
+        const consistencyWeight = 0.1;
+        
+        const confidenceScore = Math.round(
+            (accuracy * accuracyWeight) + 
+            (coverage * coverageWeight) + 
+            (consistency * consistencyWeight)
+        );
+        
+        // Generate recommendation
+        let recommendation = '';
+        if (confidenceScore < 30) {
+            recommendation = 'Need significant improvement in this area';
+        } else if (confidenceScore < 60) {
+            recommendation = 'Continue practicing to build confidence';
+        } else if (confidenceScore < 80) {
+            recommendation = 'Good progress, focus on weak points';
+        } else {
+            recommendation = 'Strong understanding of this topic';
+        }
+        
+        return {
+            score: confidenceScore,
+            accuracy,
+            coverage,
+            consistency,
+            recommendation
+        };
+    }
+
+        /**
+     * Update the confidence details section on the welcome screen
+     */
+    function updateConfidenceDetails() {
+        const confidenceCardsElement = document.getElementById('confidenceCards');
+        
+        if (!confidenceCardsElement) return;
+        
+        // Clear existing cards
+        confidenceCardsElement.innerHTML = '';
+        
+        // Add a card for each chapter
+        availableChapters.forEach(chapter => {
+            if (!chapter.enabled) return;
+            
+            const chapterTitle = chapter.title;
+            const confidence = calculateChapterConfidence(chapterTitle);
+            
+            // Create confidence card
+            const card = document.createElement('div');
+            card.className = 'confidence-card';
+            
+            // Add confidence gauge
+            const gauge = document.createElement('div');
+            gauge.className = 'confidence-gauge';
+            
+            const gaugeValue = document.createElement('div');
+            gaugeValue.className = 'gauge-value';
+            gaugeValue.textContent = `${confidence.score}%`;
+            gaugeValue.style.color = getConfidenceColor(confidence.score);
+            
+            gauge.appendChild(gaugeValue);
+            card.appendChild(gauge);
+            
+            // Add chapter title
+            const title = document.createElement('h4');
+            title.textContent = chapterTitle;
+            card.appendChild(title);
+            
+            // Add recommendation
+            const recommendation = document.createElement('p');
+            recommendation.className = 'recommendation';
+            recommendation.textContent = confidence.recommendation;
+            card.appendChild(recommendation);
+            
+            // Add factors
+            const factors = document.createElement('div');
+            factors.className = 'confidence-factors';
+            
+            const accuracy = document.createElement('div');
+            accuracy.className = 'factor';
+            accuracy.innerHTML = `<span>Accuracy:</span> ${Math.round(confidence.accuracy)}%`;
+            
+            const coverage = document.createElement('div');
+            coverage.className = 'factor';
+            coverage.innerHTML = `<span>Coverage:</span> ${Math.round(confidence.coverage)}%`;
+            
+            factors.appendChild(accuracy);
+            factors.appendChild(coverage);
+            card.appendChild(factors);
+            
+            // Add to container
+            confidenceCardsElement.appendChild(card);
+        });
+    }
+
+    /**
+     * Get color for confidence value
+     */
+    function getConfidenceColor(value) {
+        if (value < 30) return '#ef4444'; // Red
+        if (value < 60) return '#f59e0b'; // Orange
+        if (value < 80) return '#3b82f6'; // Blue
+        return '#10b981'; // Green
+    }
     
     // Public API
     return {
@@ -339,6 +493,7 @@ const Statistics = (function() {
         updateChapterPerformance,
         updateResultsScreen,
         populateReviewMistakesScreen,
-        analyzeWeaknesses
+        analyzeWeaknesses,
+        calculateChapterConfidence
     };
 })();
