@@ -500,20 +500,29 @@ function restartQuiz() {
  * Start a quiz focusing on the user's weak areas
  */
 function startWeaknessQuiz() {
-    // Set quiz mode to adaptive
-    const modeOptions = document.querySelectorAll('.mode-option');
-    modeOptions.forEach(option => {
-        option.classList.remove('selected');
-        if (option.dataset.mode === 'adaptive') {
-            option.classList.add('selected');
-        }
-    });
-    
-    // Enable confidence rating
-    document.getElementById('enableConfidence').checked = true;
-    
-    // Show chapter selection screen
+    // Show chapter selection screen first
     UI.showScreen('chapterSelection');
+    
+    // After the screen is visible, set quiz mode to adaptive
+    setTimeout(() => {
+        const modeOptions = document.querySelectorAll('.mode-option');
+        if (modeOptions && modeOptions.length > 0) {
+            modeOptions.forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.mode === 'adaptive') {
+                    option.classList.add('selected');
+                }
+            });
+        } else {
+            console.error("Mode options not found in the DOM");
+        }
+        
+        // Check if enableConfidence element exists before trying to check it
+        const enableConfidenceElement = document.getElementById('enableConfidence');
+        if (enableConfidenceElement) {
+            enableConfidenceElement.checked = true;
+        }
+    }, 100); // Small delay to ensure DOM elements are available
 }
 
 /**
