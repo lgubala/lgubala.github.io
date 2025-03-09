@@ -1,25 +1,80 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | Casper1</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-    <script src="TemplateData/UnityProgress.js"></script>  
-    <script src="Build/UnityLoader.js"></script>
-    <script>
-      var gameInstance = UnityLoader.instantiate("gameContainer", "Build/Builds.json", {onProgress: UnityProgress});
-    </script>
-  </head>
-  <body>
-    <div class="webgl-content">
-      <div id="gameContainer" style="width: 1440px; height: 1080px"></div>
-      <div class="footer">
-        <div class="webgl-logo"></div>
-        <div class="fullscreen" onclick="gameInstance.SetFullscreen(1)"></div>
-        <div class="title">Casper1</div>
-      </div>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penetration Testing Quiz - Multi-Chapter</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Penetration Testing Quiz</h1>
+        
+        <!-- Welcome Screen -->
+        <div class="welcome-screen" id="welcomeScreen">
+            <h2>Test Your Penetration Testing Knowledge</h2>
+            <p>This quiz will test your knowledge on various penetration testing topics.</p>
+            <p>Select which chapters you want to be tested on and the number of questions.</p>
+            <button class="button" id="startBtn">Choose Chapters</button>
+        </div>
+        
+        <!-- Chapter Selection Screen -->
+        <div class="chapter-selection hidden" id="chapterSelection">
+            <h2>Select Chapters</h2>
+            <p>Choose which chapters you want to include in your quiz:</p>
+            
+            <div class="chapter-options" id="chapterOptionsContainer">
+                <!-- Chapter options will be dynamically added here -->
+            </div>
+            
+            <div class="chapter-options" style="margin-top: 20px;">
+                <p>Number of questions:</p>
+                <select id="questionCount" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd; width: 100%;">
+                    <option value="5">5 questions</option>
+                    <option value="10" selected>10 questions</option>
+                    <option value="15">15 questions</option>
+                    <option value="20">20 questions</option>
+                </select>
+            </div>
+            
+            <div class="buttons-container">
+                <button class="button secondary" id="backToWelcomeBtn">Back</button>
+                <button class="button" id="startQuizBtn">Start Quiz</button>
+            </div>
+        </div>
+        
+        <!-- Quiz Container -->
+        <div class="quiz-container hidden" id="quizContainer">
+            <div class="progress-container">
+                <div>Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></div>
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+            </div>
+            
+            <div class="question-container">
+                <div class="question" id="questionText"></div>
+                <div class="options" id="optionsContainer"></div>
+            </div>
+            
+            <button class="button hidden" id="nextBtn">Next Question</button>
+        </div>
+        
+        <!-- Results Container -->
+        <div class="results-container hidden" id="resultsContainer">
+            <div class="result-summary" id="resultSummary"></div>
+            <div class="result-details" id="resultDetails"></div>
+            <div class="buttons-container">
+                <button class="button secondary" id="newQuizBtn">New Quiz</button>
+                <button class="button" id="restartBtn">Restart Same Quiz</button>
+            </div>
+        </div>
     </div>
-  </body>
+
+    <!-- Load scripts -->
+    <script src="js/chapters.js"></script>
+    <script src="js/questions/footprinting-scanning.js"></script>
+    <script src="js/questions/information-gathering.js"></script>
+    <script src="js/quiz.js"></script>
+</body>
 </html>
