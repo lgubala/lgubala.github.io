@@ -10,7 +10,10 @@ const Storage = (function() {
         USER_SETTINGS: 'pentestpro_settings',
         STATS: 'pentestpro_stats',
         STREAK: 'pentestpro_streak',
-        LAST_QUIZ_DATE: 'pentestpro_last_quiz_date'
+        LAST_QUIZ_DATE: 'pentestpro_last_quiz_date',
+        SAVED_QUIZZES: 'pentestpro_saved_quizzes',
+        TEMP_QUIZZES: 'pentestpro_temp_quizzes',
+        TEMP_QUIZ: 'pentestpro_temp_quiz'  // Legacy key for single temp quiz
     };
     
     /**
@@ -35,12 +38,15 @@ const Storage = (function() {
      * Save an item to localStorage
      * @param {string} key - The storage key
      * @param {*} value - The value to store (will be JSON stringified)
+     * @returns {boolean} True if successful, false otherwise
      */
     function save(key, value) {
         try {
             localStorage.setItem(key, JSON.stringify(value));
+            return true;
         } catch (e) {
             console.error(`Error saving data for key ${key}:`, e);
+            return false;
         }
     }
     
@@ -302,6 +308,137 @@ const Storage = (function() {
             localStorage.removeItem(key);
         });
     }
+
+    /**
+     * Get saved quizzes
+     * @returns {Array} Array of saved quizzes
+     */
+    function getSavedQuizzes() {
+        return get(KEYS.SAVED_QUIZZES, []);
+    }
+
+    /**
+     * Save a quiz to localStorage
+     * @param {Object} quizData - Quiz data object containing id, title, and questions
+     * @returns {boolean} Success status
+     */
+    function saveQuiz(quizData) {
+        console.log(`Storage.saveQuiz: Saving quiz "${quizData.title}" with ID "${quizData.id}"`);
+        
+        if (!quizData.id || !quizData.title || !Array.isArray(quizData.questions)) {
+            console.error("Invalid quiz data", quizData);
+            return false;
+        }
+        
+        try {
+            // Get existing saved quizzes
+            const savedQuizzes = getSavedQuizzes();
+            
+            // Add timestamp if not present
+            if (!quizData.createdAt) {
+                quizData.createdAt = new Date().toISOString();
+            }
+            
+            // Add description if not present
+            if (!quizData.description) {
+                quizData.description = `${quizData.questions.length} questions about ${quizData.title}`;
+            }
+            
+            // Check if this quiz already exists
+            const existingIndex = savedQuizzes.findIndex(quiz => quiz.id === quizData.id);
+            
+            if (existingIndex >= 0) {
+                // Update existing quiz
+                quizData.updatedAt = new Date().toISOString();
+                savedQuizzes[existingIndex] = quizData;
+            } else {
+                // Add new quiz
+                savedQuizzes.push(quizData);
+            }
+            
+            // Save back to localStorage
+            return save(KEYS.SAVED_QUIZZES, savedQuizzes);
+        } catch (e) {
+            console.error("Error saving quiz:", e);
+            return false;
+        }
+    }
+
+    /**
+     * Delete a saved quiz
+     * @param {string} quizId - ID of the quiz to delete
+     * @returns {boolean} Success status
+     */
+    function deleteSavedQuiz(quizId) {
+        try {
+            const savedQuizzes = getSavedQuizzes();
+            const newSavedQuizzes = savedQuizzes.filter(quiz => quiz.id !== quizId);
+            
+            if (newSavedQuizzes.length === savedQuizzes.length) {
+                // Quiz not found
+                return false;
+            }
+            
+            return save(KEYS.SAVED_QUIZZES, newSavedQuizzes);
+        } catch (e) {
+            console.error("Error deleting quiz:", e);
+            return false;
+        }
+    }
+
+    /**
+     * Save a temporary quiz
+     * @param {Object} quizData - Quiz data object
+     * @returns {boolean} Success status
+     */
+    function saveTempQuiz(quizData) {
+        console.log(`Storage.saveTempQuiz: Saving temporary quiz "${quizData.title}"`);
+        
+        try {
+            // Get existing temp quizzes
+            let tempQuizzes = get(KEYS.TEMP_QUIZZES, []);
+            
+            // Check if this quiz already exists
+            const existingIndex = tempQuizzes.findIndex(quiz => quiz.id === quizData.id);
+            
+            if (existingIndex >= 0) {
+                // Update existing quiz
+                tempQuizzes[existingIndex] = quizData;
+            } else {
+                // Add new quiz
+                tempQuizzes.push(quizData);
+            }
+            
+            // Save the array back to localStorage
+            const tempQuizzesSaved = save(KEYS.TEMP_QUIZZES, tempQuizzes);
+            
+            // Also save as single quiz for backward compatibility
+            const singleTempQuizSaved = save(KEYS.TEMP_QUIZ, quizData);
+            
+            return tempQuizzesSaved && singleTempQuizSaved;
+        } catch (e) {
+            console.error("Error saving temp quiz:", e);
+            return false;
+        }
+    }
+
+    /**
+     * Get temporary quizzes
+     * @returns {Array} Array of temporary quizzes
+     */
+    function getTempQuizzes() {
+        let tempQuizzes = get(KEYS.TEMP_QUIZZES, []);
+        
+        // If no multi-quiz format, check for single temp quiz
+        if (tempQuizzes.length === 0) {
+            const singleTempQuiz = get(KEYS.TEMP_QUIZ, null);
+            if (singleTempQuiz && singleTempQuiz.id && Array.isArray(singleTempQuiz.questions)) {
+                tempQuizzes = [singleTempQuiz];
+            }
+        }
+        
+        return tempQuizzes;
+    }
     
     // Public API
     return {
@@ -312,6 +449,17 @@ const Storage = (function() {
         getMissedQuestions,
         getWeaknessQuestions,
         getQuizHistory,
-        clearAllData
+        clearAllData,
+        
+        // New quiz management methods
+        getSavedQuizzes,
+        saveQuiz,
+        deleteSavedQuiz,
+        saveTempQuiz,
+        getTempQuizzes,
+        
+        // Expose the general storage methods for direct use
+        get,
+        save
     };
 })();

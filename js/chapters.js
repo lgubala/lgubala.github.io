@@ -73,15 +73,33 @@ const ChapterManager = {
     loadUserQuizzes: function() {
         console.log("Loading saved quizzes from localStorage...");
         
-        // Get saved quizzes from localStorage
-        const savedQuizzes = JSON.parse(localStorage.getItem('pentestpro_saved_quizzes') || '[]');
+        // Use Storage module if available
+        let savedQuizzes = [];
+        if (typeof Storage !== 'undefined' && Storage.getSavedQuizzes) {
+            savedQuizzes = Storage.getSavedQuizzes();
+            console.log(`Loaded ${savedQuizzes.length} saved quizzes using Storage module`);
+        } else {
+            // Fallback to direct localStorage access
+            try {
+                const savedQuizzesJson = localStorage.getItem('pentestpro_saved_quizzes');
+                if (savedQuizzesJson) {
+                    savedQuizzes = JSON.parse(savedQuizzesJson);
+                    if (!Array.isArray(savedQuizzes)) {
+                        console.warn("Invalid saved quizzes format, initializing as empty array");
+                        savedQuizzes = [];
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading saved quizzes:", e);
+                savedQuizzes = [];
+            }
+        }
         
         if (savedQuizzes.length === 0) {
             console.log("No saved quizzes found in localStorage");
-            return;
+        } else {
+            console.log(`Found ${savedQuizzes.length} saved quizzes`);
         }
-        
-        console.log(`Found ${savedQuizzes.length} saved quizzes`);
         
         // Add each saved quiz
         savedQuizzes.forEach(quiz => {
@@ -116,8 +134,102 @@ const ChapterManager = {
             
             console.log(`Added saved quiz: ${quiz.title} with ${quiz.questions.length} questions`);
         });
+        
+        // Also load temporary quizzes
+        this.loadTempQuizzes();
     },
+
     
+
+    // NEW FUNCTION: Load temporary quizzes from localStorage
+    loadTempQuizzes: function() {
+        console.log("Loading temporary quizzes...");
+        
+        // Use Storage module if available
+        let tempQuizzes = [];
+        if (typeof Storage !== 'undefined' && Storage.getTempQuizzes) {
+            tempQuizzes = Storage.getTempQuizzes();
+            console.log(`Loaded ${tempQuizzes.length} temp quizzes using Storage module`);
+        } else {
+            // Fallback to direct localStorage access
+            try {
+                const tempQuizzesJson = localStorage.getItem('pentestpro_temp_quizzes');
+                if (tempQuizzesJson) {
+                    tempQuizzes = JSON.parse(tempQuizzesJson);
+                    if (!Array.isArray(tempQuizzes)) {
+                        console.warn("Invalid temp quizzes format, initializing as empty array");
+                        tempQuizzes = [];
+                    }
+                }
+                
+                // If no multi-quiz format, check for single temp quiz
+                if (tempQuizzes.length === 0) {
+                    const singleTempQuizJson = localStorage.getItem('pentestpro_temp_quiz');
+                    if (singleTempQuizJson) {
+                        try {
+                            const tempQuiz = JSON.parse(singleTempQuizJson);
+                            if (tempQuiz && tempQuiz.id && tempQuiz.title && Array.isArray(tempQuiz.questions)) {
+                                tempQuizzes.push(tempQuiz);
+                            }
+                        } catch (e) {
+                            console.error("Error parsing single temp quiz:", e);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading temp quizzes:", e);
+                tempQuizzes = [];
+            }
+        }
+        
+        if (tempQuizzes.length === 0) {
+            console.log("No temporary quizzes found");
+            return;
+        }
+        
+        console.log(`Found ${tempQuizzes.length} temporary quizzes`);
+        
+        // Add each temp quiz
+        tempQuizzes.forEach(quiz => {
+            // Skip if ID is invalid
+            if (!quiz.id) {
+                console.warn("Skipping temp quiz with missing ID");
+                return;
+            }
+            
+            // Add to global data
+            quizDataByChapter[quiz.id] = quiz.questions;
+            
+            // Set in window for compatibility
+            if (tempQuizzes.length === 1) {
+                window.latestUploadedQuiz = quiz;
+            }
+            
+            // Check if already in available chapters
+            const existingIndex = availableChapters.findIndex(ch => ch.id === quiz.id);
+            if (existingIndex >= 0) {
+                // Update existing chapter
+                availableChapters[existingIndex].title = quiz.title;
+                availableChapters[existingIndex].description = `${quiz.questions.length} questions`;
+                availableChapters[existingIndex].isTemporary = true;
+                availableChapters[existingIndex].questionCount = quiz.questions.length;
+                
+                console.log(`Updated existing temporary quiz: ${quiz.title}`);
+            } else {
+                // Add as new chapter
+                availableChapters.push({
+                    id: quiz.id,
+                    title: quiz.title,
+                    description: `${quiz.questions.length} questions`,
+                    enabled: true,
+                    isTemporary: true,
+                    questionCount: quiz.questions.length
+                });
+                
+                console.log(`Added temporary quiz: ${quiz.title} with ${quiz.questions.length} questions`);
+            }
+        });
+    },
     // Detect newly added quizzes from the PowerPoint uploader
     detectNewQuizzes: function() {
         console.log("Checking for newly added quizzes...");
@@ -466,7 +578,28 @@ const ChapterManager = {
         
         console.log("Rendering saved quiz list...");
         
-        const savedQuizzes = JSON.parse(localStorage.getItem('pentestpro_saved_quizzes') || '[]');
+        // Get saved quizzes from Storage module if available
+        let savedQuizzes = [];
+        if (typeof Storage !== 'undefined' && Storage.getSavedQuizzes) {
+            savedQuizzes = Storage.getSavedQuizzes();
+            console.log(`Loaded ${savedQuizzes.length} saved quizzes for display using Storage module`);
+        } else {
+            // Fallback to direct localStorage access
+            try {
+                const savedQuizzesJson = localStorage.getItem('pentestpro_saved_quizzes');
+                if (savedQuizzesJson) {
+                    savedQuizzes = JSON.parse(savedQuizzesJson);
+                    if (!Array.isArray(savedQuizzes)) {
+                        console.warn("Invalid saved quizzes format, using empty array");
+                        savedQuizzes = [];
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading saved quizzes for display:", e);
+            }
+        }
+        
+        console.log(`Found ${savedQuizzes.length} saved quizzes to display`);
         
         if (savedQuizzes.length === 0) {
             savedQuizList.innerHTML = `
@@ -480,6 +613,12 @@ const ChapterManager = {
         
         savedQuizList.innerHTML = '';
         savedQuizzes.forEach((quiz, index) => {
+            // Skip invalid quiz data
+            if (!quiz || !quiz.title) {
+                console.warn("Skipping invalid quiz at index", index);
+                return;
+            }
+            
             const quizElement = document.createElement('div');
             quizElement.className = 'saved-quiz-item';
             quizElement.innerHTML = `
@@ -487,12 +626,12 @@ const ChapterManager = {
                     <h3>${quiz.title}</h3>
                     <p>${quiz.description || 'Custom quiz'}</p>
                     <p class="quiz-meta">
-                        <span>${quiz.questions.length} questions</span>
+                        <span>${quiz.questions ? quiz.questions.length : 0} questions</span>
                         <span>Created: ${new Date(quiz.createdAt || new Date()).toLocaleDateString()}</span>
                     </p>
                 </div>
                 <div class="quiz-actions">
-                    <button class="button small delete-quiz" data-index="${index}">
+                    <button class="button small delete-quiz" data-quiz-id="${quiz.id}" data-index="${index}">
                         <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
@@ -503,17 +642,35 @@ const ChapterManager = {
         // Add event listeners for delete buttons
         savedQuizList.querySelectorAll('.delete-quiz').forEach(button => {
             button.addEventListener('click', function() {
+                const quizId = this.getAttribute('data-quiz-id');
                 const index = parseInt(this.getAttribute('data-index'));
-                const savedQuizzes = JSON.parse(localStorage.getItem('pentestpro_saved_quizzes') || '[]');
-                const quizToDelete = savedQuizzes[index];
+                const title = savedQuizzes[index]?.title || 'this quiz';
                 
-                if (confirm(`Are you sure you want to delete the quiz "${quizToDelete.title}"?`)) {
-                    savedQuizzes.splice(index, 1);
-                    localStorage.setItem('pentestpro_saved_quizzes', JSON.stringify(savedQuizzes));
-                    alert('Quiz deleted successfully.');
+                if (confirm(`Are you sure you want to delete the quiz "${title}"?`)) {
+                    let deleted = false;
                     
-                    // Refresh the saved quiz list
-                    ChapterManager.renderSavedQuizList();
+                    // Try to delete using Storage module first
+                    if (typeof Storage !== 'undefined' && Storage.deleteSavedQuiz) {
+                        deleted = Storage.deleteSavedQuiz(quizId);
+                    } 
+                    
+                    // Fall back to manual deletion if needed
+                    if (!deleted) {
+                        try {
+                            savedQuizzes.splice(index, 1);
+                            localStorage.setItem('pentestpro_saved_quizzes', JSON.stringify(savedQuizzes));
+                            deleted = true;
+                        } catch (e) {
+                            console.error("Error deleting quiz:", e);
+                        }
+                    }
+                    
+                    if (deleted) {
+                        alert('Quiz deleted successfully.');
+                        ChapterManager.renderSavedQuizList();
+                    } else {
+                        alert('Failed to delete quiz. Please try again.');
+                    }
                 }
             });
         });
