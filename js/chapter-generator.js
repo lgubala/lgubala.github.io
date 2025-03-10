@@ -1,469 +1,408 @@
 /**
- * Chapter Generator Module for processing PowerPoint files
+ * PentestPro Chapter Generator
+ * Handles PowerPoint upload and quiz generation
  */
-const ChapterGenerator = (function() {
-    // Dependencies
-    let pptxjs; // Will initialize PPTX.js on load
+
+// Initialize the module when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initChapterGenerator();
+});
+
+function initChapterGenerator() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileUpload = document.getElementById('fileUpload');
+    const processFileBtn = document.getElementById('processFileBtn');
+    const chapterDetails = document.getElementById('chapterDetails');
+    const processingStatus = document.getElementById('processingStatus');
+    const aiPromptArea = document.getElementById('aiPromptArea');
+    const aiResponseArea = document.getElementById('aiResponseArea');
+    const resultArea = document.getElementById('resultArea');
+    const copyPromptBtn = document.getElementById('copyPromptBtn');
+    const aiResponse = document.getElementById('aiResponse');
+    const generateFilesBtn = document.getElementById('generateFilesBtn');
     
-    /**
-     * Initialize the chapter generator
-     */
-    function init() {
-        // Initialize PPTX.js if available - FIX: use the object directly, don't use it as a constructor
-        try {
-            pptxjs = window.PptxJsHandler;
-            if (!pptxjs) {
-                console.error("PPTX.js library not loaded: Object not found");
-            }
-        } catch (e) {
-            console.error("PPTX.js library not loaded:", e);
-        }
-        
-        setupEventListeners();
-        
-        // Hide processing status initially
-        const processingStatus = document.getElementById('processingStatus');
-        if (processingStatus) {
-            processingStatus.classList.add('hidden');
-        }
-    }
+    let extractedSlideContent = [];
     
-    /**
-     * Set up event listeners for file upload and processing
-     */
-    function setupEventListeners() {
-        const uploadArea = document.getElementById('uploadArea');
-        const fileUpload = document.getElementById('fileUpload');
-        const processFileBtn = document.getElementById('processFileBtn');
-        const copyPromptBtn = document.getElementById('copyPromptBtn');
-        const aiResponse = document.getElementById('aiResponse');
-        const generateFilesBtn = document.getElementById('generateFilesBtn');
-        
-        // Upload area click handler
-        if (uploadArea) {
-            uploadArea.addEventListener('click', () => {
-                fileUpload.click();
-            });
-            
-            // Drag and drop handlers
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.classList.add('drag-over');
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('drag-over');
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.classList.remove('drag-over');
-                
-                if (e.dataTransfer.files.length) {
-                    fileUpload.files = e.dataTransfer.files;
-                    handleFileSelection();
-                }
-            });
-        }
-        
-        // File input change handler
-        if (fileUpload) {
-            fileUpload.addEventListener('change', handleFileSelection);
-        }
-        
-        // Process button click handler
-        if (processFileBtn) {
-            processFileBtn.addEventListener('click', processFile);
-        }
-        
-        // Copy prompt button handler
-        if (copyPromptBtn) {
-            copyPromptBtn.addEventListener('click', () => {
-                const aiPrompt = document.getElementById('aiPrompt');
-                navigator.clipboard.writeText(aiPrompt.textContent)
-                    .then(() => {
-                        copyPromptBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                        setTimeout(() => {
-                            copyPromptBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                        }, 2000);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy:', err);
-                    });
-            });
-        }
-        
-        // AI response textarea handler
-        if (aiResponse) {
-            aiResponse.addEventListener('input', () => {
-                generateFilesBtn.disabled = !aiResponse.value.trim();
-            });
-        }
-        
-        // Generate files button handler
-        if (generateFilesBtn) {
-            generateFilesBtn.addEventListener('click', generateChapterFiles);
-        }
-    }
+    // Setup drag and drop for file upload
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('active');
+    });
     
-    /**
-     * Handle file selection from input
-     */
-    function handleFileSelection() {
-        const fileUpload = document.getElementById('fileUpload');
-        const processFileBtn = document.getElementById('processFileBtn');
-        const chapterTitle = document.getElementById('chapterTitle');
-        const chapterId = document.getElementById('chapterId');
-        const chapterDetails = document.getElementById('chapterDetails');
-        
-        if (fileUpload.files.length) {
-            const file = fileUpload.files[0];
-            
-            // Check if file is PowerPoint
-            if (file.name.endsWith('.pptx') || file.name.endsWith('.ppt')) {
-                // Enable process button
-                processFileBtn.disabled = false;
-                
-                // Show chapter details
-                chapterDetails.classList.remove('hidden');
-                
-                // Generate suggested chapter title and ID from filename
-                const baseName = file.name.split('.')[0];
-                chapterTitle.value = baseName
-                    .replace(/([A-Z])/g, ' $1') // Add space before capital letters
-                    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
-                    .trim();
-                
-                chapterId.value = baseName
-                    .replace(/[^a-zA-Z0-9]/g, '') // Remove non-alphanumeric
-                    .replace(/([A-Z])/g, c => c.toLowerCase()) // Convert to lowercase
-                    .trim();
-            } else {
-                alert('Please select a PowerPoint file (.ppt or .pptx)');
-                fileUpload.value = '';
-                processFileBtn.disabled = true;
-            }
-        }
-    }
+    uploadArea.addEventListener('dragleave', function() {
+        uploadArea.classList.remove('active');
+    });
     
-    /**
-     * Process the uploaded PowerPoint file
-     */
-    async function processFile() {
-        const fileUpload = document.getElementById('fileUpload');
-        const processingStatus = document.getElementById('processingStatus');
-        const processingInfo = document.getElementById('processingInfo');
-        const aiPromptArea = document.getElementById('aiPromptArea');
-        const aiResponseArea = document.getElementById('aiResponseArea');
-        const aiPrompt = document.getElementById('aiPrompt');
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('active');
         
-        if (!fileUpload.files.length) return;
-        
+        if (e.dataTransfer.files.length) {
+            fileUpload.files = e.dataTransfer.files;
+            validateSelectedFile();
+        }
+    });
+    
+    uploadArea.addEventListener('click', function() {
+        fileUpload.click();
+    });
+    
+    fileUpload.addEventListener('change', function() {
+        validateSelectedFile();
+    });
+    
+    // Validate the selected file
+    function validateSelectedFile() {
         const file = fileUpload.files[0];
         
+        if (!file) {
+            return;
+        }
+        
+        // Check if it's a PowerPoint file
+        if (!file.name.endsWith('.ppt') && !file.name.endsWith('.pptx')) {
+            alert('Please select a valid PowerPoint file (.ppt or .pptx)');
+            fileUpload.value = '';
+            return;
+        }
+        
+        // Enable the process button
+        processFileBtn.disabled = false;
+        
+        // Show file name
+        uploadArea.querySelector('p').textContent = `Selected file: ${file.name}`;
+    }
+    
+    // Process file button click handler
+    processFileBtn.addEventListener('click', async function() {
+        const file = fileUpload.files[0];
+        if (!file) return;
+        
         // Show processing status
+        uploadArea.classList.add('hidden');
+        processFileBtn.disabled = true;
         processingStatus.classList.remove('hidden');
-        aiPromptArea.classList.add('hidden');
-        aiResponseArea.classList.add('hidden');
         
         try {
-            processingInfo.textContent = 'Extracting text from slides...';
+            // Read file contents
+            const fileBuffer = await readFileAsArrayBuffer(file);
             
-            // ALTERNATIVE APPROACH: If PowerPoint extraction fails,
-            // we'll use a fallback approach to generate questions directly
-            // from the filename
-            try {
-                // Extract text from PowerPoint
-                const slideTexts = await extractTextFromPowerPoint(file);
-                
-                processingInfo.textContent = 'Generating AI prompt...';
-                
-                // Combine slide texts
-                const combinedText = slideTexts.join('\n\n');
-                
-                // Generate AI prompt with extracted content
-                const prompt = generateAIPrompt(combinedText);
-                
-                // Display AI prompt
-                aiPrompt.textContent = prompt;
-            } catch (extractionError) {
-                console.error('Error extracting PowerPoint text:', extractionError);
-                processingInfo.textContent = 'Using filename as fallback...';
-                
-                // Fallback to generating prompt from filename
-                const fallbackContent = generateFallbackContent(file.name);
-                
-                // Generate AI prompt with filename
-                const prompt = generateAIPrompt(fallbackContent);
-                
-                // Display AI prompt with warning
-                aiPrompt.textContent = "NOTE: Could not extract PowerPoint content. Using the filename as a basis for question generation instead.\n\n" + prompt;
-            }
+            // Extract text content from PowerPoint
+            extractedSlideContent = await PptxJsHandler.extractText(fileBuffer);
             
-            // Show prompt and response areas
-            aiPromptArea.classList.remove('hidden');
-            aiResponseArea.classList.remove('hidden');
+            // Update processing status
+            document.getElementById('processingInfo').textContent = 
+                `Extracted ${extractedSlideContent.length} slides.`;
             
-            // Hide processing status
-            processingStatus.classList.add('hidden');
+            // Show chapter details input
+            chapterDetails.classList.remove('hidden');
+            
+            // Generate chapter ID from file name (remove extension and spaces)
+            const suggestedId = file.name
+                .replace(/\.pptx?$/, '')
+                .replace(/\s+/g, '-')
+                .replace(/[^a-zA-Z0-9-]/g, '')
+                .toLowerCase();
+            
+            document.getElementById('chapterTitle').value = file.name.replace(/\.pptx?$/, '');
+            document.getElementById('chapterId').value = suggestedId;
+            
+            // Generate AI prompt
+            generateAIPrompt();
+            
         } catch (error) {
             console.error('Error processing file:', error);
-            processingInfo.textContent = `Error: ${error.message}`;
+            alert('Error processing file: ' + error.message);
+            resetUI();
+        }
+    });
+    
+    // Generate AI prompt based on extracted content
+    function generateAIPrompt() {
+        if (extractedSlideContent.length === 0) {
+            alert('No content extracted from the PowerPoint.');
+            return;
+        }
+        
+        const chapterTitle = document.getElementById('chapterTitle').value || 'Untitled Chapter';
+        const chapterId = document.getElementById('chapterId').value || 'untitledChapter';
+        
+        // Construct prompt for AI
+        let prompt = `Create a quiz for the following cybersecurity topic: "${chapterTitle}"\n\n`;
+        prompt += `Here is the slide content extracted from a PowerPoint presentation:\n\n`;
+        
+        // Add slide content
+        extractedSlideContent.forEach((slide, index) => {
+            prompt += `${slide}\n`;
+        });
+        
+        prompt += `\n\nBased on this content, create a JavaScript array of quiz questions. Each question should have the following format:\n`;
+        prompt += `
+{
+    question: "The question text here?",
+    options: [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+    ],
+    correctAnswer: 0, // Index of the correct answer (0 = A, 1 = B, etc.)
+    explanation: "Explanation of why this answer is correct",
+    chapter: "${chapterTitle}" // Include the chapter name
+}
+`;
+        
+        prompt += `\nCreate 10-15 questions that test understanding of key concepts from the slides. Include a mix of easy, medium, and difficult questions.\n`;
+        prompt += `\nProvide ONLY the JavaScript array without additional text. The output should start with: [\n  {\n    and end with  }\n]`;
+        
+        // Display the prompt for copying
+        document.getElementById('aiPrompt').textContent = prompt;
+        aiPromptArea.classList.remove('hidden');
+        aiResponseArea.classList.remove('hidden');
+        
+        // Enable response area
+        aiResponse.disabled = false;
+        aiResponse.placeholder = 'Paste the AI-generated quiz content here...';
+    }
+    
+    // Copy prompt button
+    copyPromptBtn.addEventListener('click', function() {
+        const promptText = document.getElementById('aiPrompt').textContent;
+        navigator.clipboard.writeText(promptText)
+            .then(() => {
+                // Change button text temporarily to indicate success
+                const originalText = copyPromptBtn.innerHTML;
+                copyPromptBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    copyPromptBtn.innerHTML = originalText;
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard. Please select and copy the text manually.');
+            });
+    });
+    
+    // Enable/disable generate files button based on AI response
+    aiResponse.addEventListener('input', function() {
+        generateFilesBtn.disabled = aiResponse.value.trim().length === 0;
+    });
+    
+    // Generate chapter files button
+    generateFilesBtn.addEventListener('click', function() {
+        const aiResponseText = aiResponse.value.trim();
+        
+        if (!aiResponseText) {
+            alert('Please paste the AI-generated content first.');
+            return;
+        }
+        
+        const chapterId = document.getElementById('chapterId').value;
+        const chapterTitle = document.getElementById('chapterTitle').value;
+        
+        if (!chapterId || !chapterTitle) {
+            alert('Please provide both Chapter Title and Chapter ID.');
+            return;
+        }
+        
+        // Process the AI response to get questions
+        const questions = processAIResponse(aiResponseText);
+        if (!questions) return; // Stop if parsing failed
+        
+        // Add the quiz directly to the global scope
+        console.log(`Adding ${questions.length} questions for ${chapterTitle}`);
+        
+        // Add to quizDataByChapter
+        if (typeof quizDataByChapter !== 'undefined') {
+            quizDataByChapter[chapterId] = questions;
+            console.log(`Added questions to quizDataByChapter[${chapterId}]`);
+        } else {
+            console.warn("quizDataByChapter is not defined");
+            window.quizDataByChapter = {
+                [chapterId]: questions
+            };
+        }
+        
+        // Create a global variable for the quiz
+        window[`${chapterId}Questions`] = questions;
+        
+        // Also create a special variable for temporary quizzes
+        window.newQuizData = {
+            id: chapterId,
+            title: chapterTitle,
+            description: `${questions.length} questions about ${chapterTitle}`,
+            questions: questions,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Make sure the latest uploaded quiz is set
+        window.latestUploadedQuiz = window.newQuizData;
+        
+        // Save quiz to localStorage (as a temporary quiz)
+        localStorage.setItem('pentestpro_temp_quiz', JSON.stringify(window.newQuizData));
+        
+        // Force chapter manager to refresh chapters
+        if (typeof ChapterManager !== 'undefined' && typeof ChapterManager.refreshChapterOptions === 'function') {
+            console.log("Refreshing chapter options...");
+            ChapterManager.refreshChapterOptions();
+        }
+        
+        // Show success message
+        resultArea.classList.remove('hidden');
+        document.getElementById('chapterInstruction').innerHTML = `
+            <p>Quiz "${chapterTitle}" has been created with ${questions.length} questions!</p>
+            <p>You can now select it when starting a new quiz.</p>
+            <div class="buttons-container" style="justify-content: flex-start; margin-top: 15px;">
+                <button class="button primary" id="startNewQuizBtn">
+                    <i class="fas fa-play"></i> Start New Quiz
+                </button>
+                <button class="button" id="saveQuizBtn">
+                    <i class="fas fa-save"></i> Save Quiz
+                </button>
+            </div>
+        `;
+        
+        // Add event listener for the start new quiz button
+        document.getElementById('startNewQuizBtn').addEventListener('click', function() {
+            // Hide generator UI
+            document.querySelector('.chapter-creator').classList.add('hidden');
             
-            // Ensure processing status is hidden after a delay
-            setTimeout(() => {
-                processingStatus.classList.add('hidden');
-            }, 3000);
+            // Show chapter selection screen
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('chapterSelection').classList.remove('hidden');
+            
+            // Refresh the chapter options to show the new quiz
+            if (typeof ChapterManager !== 'undefined' && 
+                typeof ChapterManager.refreshChapterOptions === 'function') {
+                ChapterManager.refreshChapterOptions();
+            }
+        });
+        
+        // Add event listener for the save quiz button
+        document.getElementById('saveQuizBtn').addEventListener('click', function() {
+            saveQuizToLocalStorage(chapterId, chapterTitle, questions);
+            alert(`Quiz "${chapterTitle}" has been saved! It will be available in future sessions.`);
+            
+            // Refresh to update the UI
+            location.reload();
+        });
+        
+        // Hide the AI response area
+        aiResponseArea.classList.add('hidden');
+    });
+    
+    // Process AI response to extract questions array
+    function processAIResponse(aiResponseText) {
+        try {
+            // The AI response likely contains a JS array of questions
+            // Extract just the array part by finding everything between square brackets
+            let arrayText = aiResponseText;
+            
+            // If the response contains more than just the array, try to extract just the array
+            if (!aiResponseText.trim().startsWith('[')) {
+                const arrayMatch = aiResponseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+                if (!arrayMatch) {
+                    throw new Error("Could not find a valid questions array in the AI response");
+                }
+                arrayText = arrayMatch[0];
+            }
+            
+            // Parse the extracted array text into a proper JS object
+            const questionsArray = JSON.parse(arrayText);
+            
+            // Validate the structure of the questions
+            if (!Array.isArray(questionsArray) || questionsArray.length === 0) {
+                throw new Error("Invalid questions array format");
+            }
+            
+            // Check if each question has the required properties
+            questionsArray.forEach((q, index) => {
+                if (!q.question || !Array.isArray(q.options) || q.correctAnswer === undefined) {
+                    throw new Error(`Question at index ${index} has invalid format`);
+                }
+                
+                // Add chapter property if not present
+                if (!q.chapter) {
+                    q.chapter = chapterTitle;
+                }
+                
+                // Add explanation if not present
+                if (!q.explanation) {
+                    q.explanation = `The correct answer is: ${q.options[q.correctAnswer]}`;
+                }
+            });
+            
+            return questionsArray;
+        } catch (error) {
+            console.error("Error parsing AI response:", error);
+            alert("There was an error parsing the AI response: " + error.message);
+            return null;
         }
     }
     
-    /**
-     * Generate fallback content from filename
-     * @param {string} filename - The PowerPoint filename
-     * @returns {string} Fallback content
-     */
-    function generateFallbackContent(filename) {
-        // Remove extension and replace underscores and hyphens with spaces
-        const baseFilename = filename.split('.')[0]
-            .replace(/[_-]/g, ' ')
-            .replace(/([A-Z])/g, ' $1') // Add space before capital letters
-            .trim();
+    // Save quiz to localStorage
+    function saveQuizToLocalStorage(id, title, questions) {
+        // Get existing saved quizzes or initialize empty array
+        let savedQuizzes = JSON.parse(localStorage.getItem('pentestpro_saved_quizzes') || '[]');
         
-        return `Topics related to ${baseFilename}:\n` +
-               `- Understanding ${baseFilename}\n` +
-               `- Key concepts in ${baseFilename}\n` +
-               `- Important aspects of ${baseFilename}\n` +
-               `- Best practices for ${baseFilename}\n`;
+        // Check if this quiz already exists
+        const existingIndex = savedQuizzes.findIndex(quiz => quiz.id === id);
+        
+        if (existingIndex >= 0) {
+            // Update existing quiz
+            savedQuizzes[existingIndex] = {
+                ...savedQuizzes[existingIndex],
+                title: title,
+                description: `${questions.length} questions about ${title}`,
+                questions: questions,
+                updatedAt: new Date().toISOString()
+            };
+        } else {
+            // Add new quiz
+            savedQuizzes.push({
+                id: id,
+                title: title,
+                description: `${questions.length} questions about ${title}`,
+                questions: questions,
+                createdAt: new Date().toISOString()
+            });
+        }
+        
+        // Save back to localStorage
+        localStorage.setItem('pentestpro_saved_quizzes', JSON.stringify(savedQuizzes));
+        
+        // Remove the temporary quiz
+        localStorage.removeItem('pentestpro_temp_quiz');
     }
     
-    /**
-     * Extract text from PowerPoint file
-     * @param {File} file - The PowerPoint file
-     * @returns {Promise<string[]>} Array of text from each slide
-     */
-    async function extractTextFromPowerPoint(file) {
+    // Helper function to read file as ArrayBuffer
+    function readFileAsArrayBuffer(file) {
         return new Promise((resolve, reject) => {
-            // Make sure the PptxJsHandler is available
-            if (!window.PptxJsHandler) {
-                console.error('PptxJsHandler not found in window object. Looking for alternative extraction methods...');
-                
-                // Try a simple text extraction from the filename as fallback
-                const fallbackTexts = [`Content generated from filename: ${file.name}`];
-                resolve(fallbackTexts);
-                return;
-            }
-            
             const reader = new FileReader();
             
             reader.onload = function(e) {
-                try {
-                    // Check if the file is a valid ZIP (all PPTX files are ZIP files)
-                    const arrayBuffer = e.target.result;
-                    const byteArray = new Uint8Array(arrayBuffer.slice(0, 4));
-                    
-                    // ZIP files start with PK\x03\x04 (hex: 50 4B 03 04)
-                    if (byteArray[0] !== 0x50 || byteArray[1] !== 0x4B || 
-                        byteArray[2] !== 0x03 || byteArray[3] !== 0x04) {
-                        console.warn('File does not appear to be a valid ZIP archive. Using fallback extraction.');
-                        const fallbackTexts = [`Content generated from filename: ${file.name}`];
-                        resolve(fallbackTexts);
-                        return;
-                    }
-                    
-                    // Check if extractText function exists and is callable
-                    if (typeof window.PptxJsHandler.extractText !== 'function') {
-                        console.error('PptxJsHandler.extractText is not a function');
-                        const fallbackTexts = [`Content generated from filename: ${file.name}`];
-                        resolve(fallbackTexts);
-                        return;
-                    }
-                    
-                    window.PptxJsHandler.extractText(arrayBuffer)
-                        .then(slideTexts => {
-                            if (!slideTexts || slideTexts.length === 0) {
-                                console.warn('No slide content could be extracted. Using fallback.');
-                                const fallbackTexts = [`Content generated from filename: ${file.name}`];
-                                resolve(fallbackTexts);
-                                return;
-                            }
-                            resolve(slideTexts);
-                        })
-                        .catch(error => {
-                            console.error('Error in extractText:', error);
-                            const fallbackTexts = [`Content generated from filename: ${file.name}`];
-                            resolve(fallbackTexts);
-                        });
-                } catch (error) {
-                    console.error('Exception in extraction process:', error);
-                    const fallbackTexts = [`Content generated from filename: ${file.name}`];
-                    resolve(fallbackTexts);
-                }
+                resolve(e.target.result);
             };
             
-            reader.onerror = function() {
-                console.error('Error reading file');
-                const fallbackTexts = [`Content generated from filename: ${file.name}`];
-                resolve(fallbackTexts);
+            reader.onerror = function(e) {
+                reject(new Error('Error reading file: ' + e.target.error));
             };
             
             reader.readAsArrayBuffer(file);
         });
     }
     
-    /**
-     * Generate AI prompt from extracted text
-     * @param {string} text - The extracted text
-     * @returns {string} AI prompt
-     */
-    function generateAIPrompt(text) {
-        const chapterTitle = document.getElementById('chapterTitle').value;
-        
-        return `Generate 20 multiple-choice questions for a quiz on "${chapterTitle}" based on this content:
-
-${text}
-
-For each question, provide:
-1. The question text
-2. Four possible answers (with exactly one correct)
-3. The index of the correct answer (0-3)
-4. A brief explanation of why the answer is correct
-
-Format the response as a JavaScript array of objects following this exact structure:
-[
-  {
-    "question": "Question text here?",
-    "options": [
-      "Option 1",
-      "Option 2", 
-      "Option 3",
-      "Option 4"
-    ],
-    "correctAnswer": 0,
-    "chapter": "${chapterTitle}",
-    "explanation": "Explanation for why this answer is correct."
-  },
-  ...
-]
-
-Important:
-- Make sure the correctAnswer is the index (0-3) of the correct option
-- Include exactly 4 options for each question
-- Make sure the questions test understanding of key concepts
-- Vary the difficulty level of questions
-- Make sure the questions are clear and unambiguous
-- The response should be valid JSON that can be parsed with JSON.parse()`;
+    // Reset UI to initial state
+    function resetUI() {
+        uploadArea.classList.remove('hidden');
+        processFileBtn.disabled = true;
+        chapterDetails.classList.add('hidden');
+        processingStatus.classList.add('hidden');
+        aiPromptArea.classList.add('hidden');
+        aiResponseArea.classList.add('hidden');
+        resultArea.classList.add('hidden');
+        fileUpload.value = '';
+        uploadArea.querySelector('p').textContent = 'Drag & drop PowerPoint files here or click to browse';
+        extractedSlideContent = [];
     }
-    
-    /**
-     * Generate chapter files from AI response
-     */
-    function generateChapterFiles() {
-        const aiResponse = document.getElementById('aiResponse');
-        const resultArea = document.getElementById('resultArea');
-        const questionFileDownload = document.getElementById('questionFileDownload');
-        const chapterInstruction = document.getElementById('chapterInstruction');
-        const chapterId = document.getElementById('chapterId').value;
-        const chapterTitle = document.getElementById('chapterTitle').value;
-        
-        let questions;
-        
-        try {
-            // Parse AI response as JSON
-            const responseText = aiResponse.value.trim();
-            
-            // Try to extract JSON if it's wrapped in markdown code blocks
-            const jsonMatch = responseText.match(/```(?:json)?\s*(\[[\s\S]*\])\s*```/);
-            const jsonText = jsonMatch ? jsonMatch[1] : responseText;
-            
-            // Try different parsing approaches
-            try {
-                questions = JSON.parse(jsonText);
-            } catch (parseError) {
-                // Try removing any leading/trailing text that might be causing issues
-                const altJsonMatch = jsonText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-                if (altJsonMatch) {
-                    questions = JSON.parse(altJsonMatch[0]);
-                } else {
-                    throw parseError;
-                }
-            }
-            
-            // Validate questions
-            if (!Array.isArray(questions) || questions.length === 0) {
-                throw new Error('Response does not contain a valid array of questions');
-            }
-            
-            // Additional validation for each question
-            questions.forEach((q, index) => {
-                if (!q.question || !Array.isArray(q.options) || q.options.length !== 4 || 
-                    typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer > 3) {
-                    throw new Error(`Question at index ${index} is invalid. Make sure it has a question, 4 options, and a valid correctAnswer.`);
-                }
-                
-                // Ensure chapter is set correctly
-                q.chapter = chapterTitle;
-            });
-            
-            // Generate question file content
-            const questionsFileContent = generateQuestionsFile(chapterId, questions);
-            
-            // Create downloadable files
-            const questionsBlob = new Blob([questionsFileContent], { type: 'text/javascript' });
-            const questionsUrl = URL.createObjectURL(questionsBlob);
-            
-            // Show download links
-            questionFileDownload.innerHTML = `
-                <a href="${questionsUrl}" download="${chapterId}.js">
-                    <i class="fas fa-download"></i> Download ${chapterId}.js
-                </a>
-            `;
-            
-            // Show chapter instructions
-            chapterInstruction.innerHTML = `
-To add this chapter to your quiz:
-
-1. Save the downloaded file to your js/questions/ folder
-2. Add the following entry to the availableChapters array in js/chapters.js:
-
-{
-    id: '${chapterId}',
-    title: '${chapterTitle}',
-    description: 'Generated from PowerPoint',
-    enabled: true
 }
-
-3. Add this script tag to your index.html (before quiz-enhanced.js):
-
-<script src="js/questions/${chapterId}.js"></script>
-`;
-            
-            // Show result area
-            resultArea.classList.remove('hidden');
-        } catch (error) {
-            console.error('Error generating files:', error);
-            alert(`Error: ${error.message}. Please check that the AI response is valid JSON.`);
-        }
-    }
-    
-    /**
-     * Generate questions file content
-     * @param {string} chapterId - The chapter ID
-     * @param {Array} questions - The questions array
-     * @returns {string} File content
-     */
-    function generateQuestionsFile(chapterId, questions) {
-        return `/**
- * Questions for the ${document.getElementById('chapterTitle').value} chapter
- * Generated automatically from PowerPoint
- */
-quizDataByChapter.${chapterId} = ${JSON.stringify(questions, null, 2)};`;
-    }
-    
-    // Public API
-    return {
-        init
-    };
-})();
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', ChapterGenerator.init);

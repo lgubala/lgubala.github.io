@@ -30,6 +30,7 @@ const newRandomBtn = document.getElementById('newRandomBtn');
  */
 function init() {
     setupEventListeners();
+    console.log("Quiz system initialized");
 }
 
 /**
@@ -155,7 +156,63 @@ function getSelectedChapters() {
 }
 
 /**
- * Start a new quiz
+ * NEW FUNCTION: Bridge between chapter selection system and quiz engine
+ * This is called by chapters.js after setting up window.currentQuiz
+ */
+function initQuiz() {
+    console.log("initQuiz called");
+    
+    // Check if we have quiz data from the chapter selection system
+    if (window.currentQuiz && window.currentQuiz.questions && window.currentQuiz.questions.length > 0) {
+        console.log(`Initializing quiz with ${window.currentQuiz.questions.length} questions from chapter selection`);
+        
+        // Set up quiz state using the questions provided by chapter selection
+        currentQuestions = window.currentQuiz.questions;
+        currentQuestionIndex = 0;
+        userAnswers = Array(currentQuestions.length).fill(null);
+        userConfidenceRatings = Array(currentQuestions.length).fill(0);
+        quizStartTime = Date.now();
+        quizTimeSpent = 0;
+        
+        // Get time limit from the window.currentQuiz object
+        timeLimitPerQuestion = window.currentQuiz.timeLimit || 0;
+        
+        // Update UI
+        document.getElementById('totalQuestions').textContent = currentQuestions.length;
+        
+        // Set chapter title - handle both formats
+        const chapter = document.getElementById('currentChapter');
+        if (chapter) {
+            if (currentQuestions[0].chapterTitle) {
+                chapter.textContent = currentQuestions[0].chapterTitle;
+            } else if (currentQuestions[0].chapter) {
+                chapter.textContent = currentQuestions[0].chapter;
+            } else {
+                chapter.textContent = "Quiz";
+            }
+        }
+        
+        // Make sure question container is visible
+        const questionContainer = document.querySelector('.question-container');
+        if (questionContainer) {
+            questionContainer.classList.remove('hidden');
+        }
+        
+        // Setup timer if enabled
+        setupQuestionTimer();
+        
+        // Load first question
+        loadQuestion();
+        
+        console.log("Quiz initialized successfully");
+    } else {
+        console.error("No quiz data found! window.currentQuiz is not properly set up");
+        alert("Error initializing quiz: No questions available. Please try again.");
+    }
+}
+
+/**
+ * Start a new quiz from chapter selection UI
  */
 function startQuiz() {
     // Get quiz settings
@@ -314,7 +371,16 @@ function loadQuestion() {
     document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
     document.getElementById('progressBar').style.width = `${((currentQuestionIndex + 1) / currentQuestions.length) * 100}%`;
     document.getElementById('questionText').textContent = question.question;
-    document.getElementById('currentChapter').textContent = question.chapter;
+    
+    // Update chapter - handle both formats
+    const chapterElement = document.getElementById('currentChapter');
+    if (chapterElement) {
+        if (question.chapterTitle) {
+            chapterElement.textContent = question.chapterTitle;
+        } else if (question.chapter) {
+            chapterElement.textContent = question.chapter;
+        }
+    }
     
     // Reset confidence options
     document.querySelectorAll('.confidence-option').forEach(option => {
@@ -411,7 +477,9 @@ function showResults() {
             correctCount++;
         } else {
             // Save missed question
-            Storage.saveMissedQuestion(currentQuestions[index], answer);
+            if (typeof Storage !== 'undefined' && Storage.saveMissedQuestion) {
+                Storage.saveMissedQuestion(currentQuestions[index], answer);
+            }
         }
     });
     
@@ -421,6 +489,26 @@ function showResults() {
     const scorePercentage = Math.round((correctCount / currentQuestions.length) * 100);
     document.getElementById('resultSummary').textContent = 
         `You scored ${correctCount} out of ${currentQuestions.length} (${scorePercentage}%)`;
+    
+    // Update basic result stats
+    const correctCountElement = document.getElementById('correctCount');
+    const incorrectCountElement = document.getElementById('incorrectCount');
+    const accuracyValueElement = document.getElementById('accuracyValue');
+    const timeSpentElement = document.getElementById('timeSpent');
+    
+    if (correctCountElement) correctCountElement.textContent = correctCount;
+    if (incorrectCountElement) incorrectCountElement.textContent = currentQuestions.length - correctCount;
+    if (accuracyValueElement) accuracyValueElement.textContent = `${scorePercentage}%`;
+    
+    if (timeSpentElement) {
+        if (quizTimeSpent < 60) {
+            timeSpentElement.textContent = `${quizTimeSpent} sec`;
+        } else {
+            const minutes = Math.floor(quizTimeSpent / 60);
+            const seconds = quizTimeSpent % 60;
+            timeSpentElement.textContent = `${minutes} min ${seconds} sec`;
+        }
+    }
     
     // Update result details
     const resultDetails = document.getElementById('resultDetails');
@@ -436,7 +524,8 @@ function showResults() {
         // Question text
         const questionTextElement = document.createElement('div');
         questionTextElement.className = 'review-question-text';
-        questionTextElement.textContent = `${index + 1}. [${question.chapter}] ${question.question}`;
+        const chapterText = question.chapterTitle || question.chapter || 'Quiz';
+        questionTextElement.textContent = `${index + 1}. [${chapterText}] ${question.question}`;
         reviewQuestion.appendChild(questionTextElement);
         
         // Options
@@ -482,14 +571,42 @@ function showResults() {
         resultDetails.appendChild(reviewQuestion);
     });
     
-    // Save quiz result
-    Storage.saveQuizResult(quizResult);
+    // Save quiz result if Storage exists
+    if (typeof Storage !== 'undefined' && Storage.saveQuizResult) {
+        Storage.saveQuizResult(quizResult);
+    }
     
-    // Update statistics on results screen
-    Statistics.updateResultsScreen(quizResult);
+    // Update statistics on results screen if Statistics exists
+    if (typeof Statistics !== 'undefined' && Statistics.updateResultsScreen) {
+        Statistics.updateResultsScreen(quizResult);
+    }
     
     // Show results container
-    UI.showScreen('resultsContainer');
+    if (typeof UI !== 'undefined' && UI.showScreen) {
+        UI.showScreen('resultsContainer');
+    } else {
+        // Fallback to direct DOM manipulation
+        document.getElementById('quizContainer').classList.add('hidden');
+        document.getElementById('resultsContainer').classList.remove('hidden');
+    }
+    
+    // SCROLL FIX: Scroll to the top of the results container
+    setTimeout(() => {
+        // Give the browser a moment to render the results screen
+        window.scrollTo(0, 0);
+        
+        // Alternative method to ensure we're at the top
+        const resultsContainer = document.getElementById('resultsContainer');
+        if (resultsContainer) {
+            resultsContainer.scrollTop = 0;
+            
+            // If there's a specific element to scroll to
+            const resultSummary = document.getElementById('resultSummary');
+            if (resultSummary) {
+                resultSummary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    }, 100);
 }
 
 /**
@@ -507,7 +624,13 @@ function restartQuiz() {
     loadQuestion();
     
     // Show quiz container
-    UI.showScreen('quizContainer');
+    if (typeof UI !== 'undefined' && UI.showScreen) {
+        UI.showScreen('quizContainer');
+    } else {
+        // Fallback to direct DOM manipulation
+        document.getElementById('resultsContainer').classList.add('hidden');
+        document.getElementById('quizContainer').classList.remove('hidden');
+    }
 }
 
 /**
@@ -515,7 +638,15 @@ function restartQuiz() {
  */
 function startWeaknessQuiz() {
     // Show chapter selection screen first
-    UI.showScreen('chapterSelection');
+    if (typeof UI !== 'undefined' && UI.showScreen) {
+        UI.showScreen('chapterSelection');
+    } else {
+        // Fallback to direct DOM manipulation
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('hidden');
+        });
+        document.getElementById('chapterSelection').classList.remove('hidden');
+    }
     
     // After the screen is visible, set quiz mode to adaptive
     setTimeout(() => {
@@ -552,3 +683,29 @@ document.addEventListener('DOMContentLoaded', function() {
     init();
     initChapterSelectionUI();
 });
+
+// UI helper object (fallback for missing UI module)
+if (typeof UI === 'undefined') {
+    window.UI = {
+        showScreen: function(screenId) {
+            console.log(`Showing screen: ${screenId}`);
+            // Hide all screens
+            document.querySelectorAll('section').forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            
+            // Show the requested screen
+            const requestedScreen = document.getElementById(screenId);
+            if (requestedScreen) {
+                requestedScreen.classList.remove('hidden');
+            } else {
+                console.error(`Screen not found: ${screenId}`);
+            }
+        }
+    };
+}
+
+// Export the initQuiz function to the global window object
+window.initQuiz = initQuiz;
+
+console.log("Quiz enhanced module loaded. initQuiz function is available globally.");

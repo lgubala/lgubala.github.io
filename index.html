@@ -191,6 +191,9 @@
                         <button class="button secondary" id="resetDataBtn">
                             <i class="fas fa-trash-alt"></i> Reset
                         </button>
+                        <button class="button secondary" id="manageSavedBtn">
+                            <i class="fas fa-folder"></i> Manage Saved Quizzes
+                        </button>
                     </div>
                 </div>
             </section>
@@ -227,6 +230,7 @@
                             <h3>Choose Chapters</h3>
                             <div class="chapter-options" id="chapterOptionsContainer">
                                 <!-- Chapter options will be dynamically added here -->
+                                <!-- This section will be populated by the renderChapterOptions function -->
                             </div>
                         </div>
                         
@@ -411,64 +415,93 @@
                 </div>
             </section>
 
+            <!-- Saved Quizzes Section -->
+            <section class="saved-quizzes-section hidden" id="savedQuizzesSection">
+                <div class="container">
+                    <h2>Manage Saved Quizzes</h2>
+                    <p>Here you can view and manage all quizzes you've created from PowerPoint presentations.</p>
+                    
+                    <div class="saved-quiz-list" id="savedQuizList">
+                        <!-- This will be populated dynamically -->
+                        <div class="no-quizzes-message">
+                            <i class="fas fa-info-circle"></i>
+                            <p>You haven't created any quizzes yet. Use the Chapter Creator to make a quiz from a PowerPoint file.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="buttons-container">
+                        <button class="button secondary" id="backFromSavedBtn">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button class="button warning" id="clearAllSavedBtn">
+                            <i class="fas fa-trash"></i> Clear All Saved Quizzes
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PowerPoint Quiz Creator -->
             <div class="chapter-creator">
-                <h3>Create New Chapter from PowerPoint</h3>
-                <p>Upload a PowerPoint presentation to generate quiz questions.</p>
+                <h3>Create New Quiz from PowerPoint</h3>
+                <p>Upload a PowerPoint presentation to generate quiz questions using AI.</p>
                 
                 <div class="upload-area" id="uploadArea">
-                  <i class="fas fa-cloud-upload-alt"></i>
-                  <p>Drag & drop PowerPoint files here or click to browse</p>
-                  <input type="file" id="fileUpload" accept=".ppt,.pptx" hidden>
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Drag & drop PowerPoint files here or click to browse</p>
+                    <input type="file" id="fileUpload" accept=".ppt,.pptx" hidden>
                 </div>
                 
                 <div class="chapter-details hidden" id="chapterDetails">
-                  <div class="form-group">
-                    <label for="chapterTitle">Chapter Title:</label>
-                    <input type="text" id="chapterTitle" placeholder="Enter a title for this chapter">
-                  </div>
-                  <div class="form-group">
-                    <label for="chapterId">Chapter ID (no spaces):</label>
-                    <input type="text" id="chapterId" placeholder="enterChapterIdWithoutSpaces">
-                  </div>
+                    <div class="form-group">
+                        <label for="chapterTitle">Quiz Title:</label>
+                        <input type="text" id="chapterTitle" placeholder="Enter a title for this quiz">
+                    </div>
+                    <div class="form-group">
+                        <label for="chapterId">Quiz ID (no spaces):</label>
+                        <input type="text" id="chapterId" placeholder="quizIdWithoutSpaces">
+                        <small>This is used internally to identify the quiz. Use only letters, numbers, and hyphens.</small>
+                    </div>
                 </div>
                 
                 <div class="processing-status hidden" id="processingStatus">
-                  <div class="spinner"></div>
-                  <p>Processing presentation... <span id="processingInfo"></span></p>
+                    <div class="spinner"></div>
+                    <p>Processing presentation... <span id="processingInfo"></span></p>
                 </div>
                 
                 <div class="ai-prompt-area hidden" id="aiPromptArea">
-                  <h4>AI Prompt</h4>
-                  <p>Copy this prompt and paste it into ChatGPT or another AI assistant:</p>
-                  <div class="prompt-container">
-                    <pre id="aiPrompt"></pre>
-                    <button class="button small" id="copyPromptBtn">
-                      <i class="fas fa-copy"></i> Copy
-                    </button>
-                  </div>
+                    <h4>AI Prompt</h4>
+                    <p>Copy this prompt and paste it into ChatGPT or another AI assistant:</p>
+                    <div class="prompt-container">
+                        <pre id="aiPrompt"></pre>
+                        <button class="button small" id="copyPromptBtn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="ai-response-area hidden" id="aiResponseArea">
-                  <h4>Paste AI Response</h4>
-                  <p>Paste the AI's response below:</p>
-                  <textarea id="aiResponse" rows="10" placeholder="Paste the AI's response here..."></textarea>
-                  <button class="button primary" id="generateFilesBtn" disabled>
-                    <i class="fas fa-magic"></i> Generate Chapter Files
-                  </button>
+                    <h4>Paste AI Response</h4>
+                    <p>Paste the AI's response below:</p>
+                    <textarea id="aiResponse" rows="10" placeholder="Paste the AI's response here..."></textarea>
+                    <button class="button primary" id="generateFilesBtn" disabled>
+                        <i class="fas fa-magic"></i> Generate Quiz
+                    </button>
                 </div>
                 
                 <div class="result-area hidden" id="resultArea">
-                  <h4>Files Generated</h4>
-                  <div class="file-download" id="questionFileDownload"></div>
-                  <div class="chapter-instruction" id="chapterInstruction"></div>
+                    <h4>Quiz Generated</h4>
+                    <div class="success-message">
+                        <i class="fas fa-check-circle"></i>
+                        <div id="chapterInstruction"></div>
+                    </div>
                 </div>
                 
                 <div class="upload-actions">
-                  <button class="button primary" id="processFileBtn" disabled>
-                    <i class="fas fa-cogs"></i> Process File
-                  </button>
+                    <button class="button primary" id="processFileBtn" disabled>
+                        <i class="fas fa-cogs"></i> Process File
+                    </button>
                 </div>
-              </div>
+            </div>
         </main>
         
         <footer>
@@ -486,5 +519,7 @@
     <script src="js/quiz-enhanced.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/chapter-generator.js"></script>
+    <script src="js/quizbridge.js"></script>
+    <script src="js/quiz-debugger.js"></script>
 </body>
 </html>
