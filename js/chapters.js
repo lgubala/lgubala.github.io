@@ -16,6 +16,12 @@ const availableChapters = [
         title: 'Information Gathering',
         description: 'Passive and active reconnaissance, DNS enumeration, Whois lookup',
         enabled: true
+    },
+    {
+        id: 'enumerations',
+        title: 'Enumerations',
+        description: 'Ftp, SMB, SMTP, MySQL Enumerations',
+        enabled: true
     }
 ];
 
@@ -62,6 +68,10 @@ const ChapterManager = {
             console.log(`Loaded ${informationGatheringQuestions.length} information gathering questions`);
         }
         
+        if (typeof enumerationsQuestions !== 'undefined') {
+            quizDataByChapter['enumerations'] = enumerationsQuestions;
+            console.log(`Loaded ${enumerationsQuestions.length} enumerations questions`);
+        }
         // DEBUG: Check loaded chapters
         console.log("LOADED HARDCODED CHAPTERS:");
         for (const chapterId in quizDataByChapter) {
