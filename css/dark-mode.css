@@ -1,0 +1,636 @@
+/* Dark Mode CSS using CSS Variables */
+
+/* Base theme variables */
+:root {
+    /* Colors */
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f9fafb;
+    --color-bg-tertiary: #f3f4f6;
+    --color-bg-accent: #4f46e5;
+    --color-bg-accent-hover: #4338ca;
+    
+    /* Text colors */
+    --color-text-primary: #111827;
+    --color-text-secondary: #4b5563;
+    --color-text-tertiary: #6b7280;
+    --color-text-accent: #4f46e5;
+    --color-text-on-accent: #ffffff;
+    
+    /* Border colors */
+    --color-border: #e5e7eb;
+    --color-border-accent: #4f46e5;
+    
+    /* Shadow colors */
+    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-shadow-dark: rgba(0, 0, 0, 0.2);
+    
+    /* Badge colors */
+    --color-badge-green-bg: #d1fae5;
+    --color-badge-green-text: #065f46;
+    --color-badge-blue-bg: #dbeafe;
+    --color-badge-blue-text: #1e40af;
+    --color-badge-yellow-bg: #fef3c7;
+    --color-badge-yellow-text: #92400e;
+    --color-badge-red-bg: #fee2e2;
+    --color-badge-red-text: #b91c1c;
+    --color-badge-indigo-bg: #e0e7ff;
+    --color-badge-indigo-text: #3730a3;
+    
+    /* Gradient */
+    --color-gradient-start: #4F46E5;
+    --color-gradient-end: #7C3AED;
+    
+    /* Transitions */
+    --transition-speed: 0.3s;
+
+    /* Quiz answer options */
+    --color-answer-selected-bg: #eef2ff;
+    --color-answer-selected-border: #6366f1;
+    --color-answer-hover: #f9fafb;
+    
+    /* Status badges */
+    --color-correct-bg: #d1fae5;
+    --color-correct-text: #065f46;
+    --color-incorrect-bg: #fee2e2;
+    --color-incorrect-text: #b91c1c;
+    
+    /* Progress circles */
+    --color-progress-bg: #e5e7eb;
+    --color-progress-fill: #4f46e5;
+}
+
+/* Dark mode variables */
+.dark {
+    /* Colors */
+    --color-bg-primary: #1f2937;
+    --color-bg-secondary: #111827;
+    --color-bg-tertiary: #374151;
+    --color-bg-accent: #4338ca;
+    --color-bg-accent-hover: #4f46e5;
+    
+    /* Text colors */
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #e5e7eb;
+    --color-text-tertiary: #9ca3af;
+    --color-text-accent: #818cf8;
+    --color-text-on-accent: #ffffff;
+    
+    /* Border colors */
+    --color-border: #374151;
+    --color-border-accent: #6366f1;
+    
+    /* Shadow colors */
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --color-shadow-dark: rgba(0, 0, 0, 0.5);
+    
+    /* Badge colors */
+    --color-badge-green-bg: #064e3b;
+    --color-badge-green-text: #a7f3d0;
+    --color-badge-blue-bg: #1e3a8a;
+    --color-badge-blue-text: #bfdbfe;
+    --color-badge-yellow-bg: #78350f;
+    --color-badge-yellow-text: #fde68a;
+    --color-badge-red-bg: #991b1b;
+    --color-badge-red-text: #fecaca;
+    --color-badge-indigo-bg: #312e81;
+    --color-badge-indigo-text: #c7d2fe;
+    
+    /* Gradient */
+    --color-gradient-start: #4338ca;
+    --color-gradient-end: #6d28d9;
+
+    /* Quiz answer options */
+    --color-answer-selected-bg: #312e81;
+    --color-answer-selected-border: #6366f1;
+    --color-answer-hover: #1f2937;
+    
+    /* Status badges */
+    --color-correct-bg: #064e3b;
+    --color-correct-text: #a7f3d0;
+    --color-incorrect-bg: #991b1b;
+    --color-incorrect-text: #fecaca;
+    
+    /* Progress circles */
+    --color-progress-bg: #4b5563;
+    --color-progress-fill: #818cf8;
+}
+
+/* Apply CSS variables to elements */
+
+/* Background colors */
+.bg-white, .bg-gray-50, .bg-gray-100 {
+    background-color: var(--color-bg-primary);
+}
+
+.bg-gray-50 {
+    background-color: var(--color-bg-secondary);
+}
+
+.bg-gray-100, .bg-gray-200 {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* Button colors */
+.bg-indigo-600 {
+    background-color: var(--color-bg-accent);
+}
+
+.bg-indigo-700, .hover\:bg-indigo-700:hover {
+    background-color: var(--color-bg-accent-hover);
+}
+
+/* Text colors */
+.text-gray-900 {
+    color: var(--color-text-primary);
+}
+
+.text-gray-700, .text-gray-800 {
+    color: var(--color-text-secondary);
+}
+
+.text-gray-500, .text-gray-600 {
+    color: var(--color-text-tertiary);
+}
+
+.text-indigo-600 {
+    color: var(--color-text-accent);
+}
+
+.text-white {
+    color: var(--color-text-on-accent);
+}
+
+/* Border colors */
+.border-gray-200, .border-gray-300 {
+    border-color: var(--color-border);
+}
+
+.border-indigo-500 {
+    border-color: var(--color-border-accent);
+}
+
+/* Shadow utilities */
+.shadow-sm {
+    box-shadow: 0 1px 2px 0 var(--color-shadow);
+}
+
+.shadow-md {
+    box-shadow: 0 4px 6px -1px var(--color-shadow), 0 2px 4px -1px var(--color-shadow);
+}
+
+.shadow-lg {
+    box-shadow: 0 10px 15px -3px var(--color-shadow-dark), 0 4px 6px -2px var(--color-shadow);
+}
+
+.shadow-xl {
+    box-shadow: 0 20px 25px -5px var(--color-shadow-dark), 0 10px 10px -5px var(--color-shadow);
+}
+
+/* Set up dark mode transitions */
+.dark-mode-transition {
+    transition: background-color var(--transition-speed) ease,
+                color var(--transition-speed) ease,
+                border-color var(--transition-speed) ease,
+                box-shadow var(--transition-speed) ease;
+}
+
+/* Enable smooth transition when switching themes */
+body, nav, header, main, section, div, button, input, textarea, select {
+    transition: background-color var(--transition-speed) ease,
+                color var(--transition-speed) ease,
+                border-color var(--transition-speed) ease,
+                box-shadow var(--transition-speed) ease;
+}
+
+/* Custom badges */
+.bg-green-100 {
+    background-color: var(--color-badge-green-bg);
+}
+.text-green-800 {
+    color: var(--color-badge-green-text);
+}
+
+.bg-blue-100 {
+    background-color: var(--color-badge-blue-bg);
+}
+.text-blue-800 {
+    color: var(--color-badge-blue-text);
+}
+
+.bg-yellow-100 {
+    background-color: var(--color-badge-yellow-bg);
+}
+.text-yellow-800 {
+    color: var(--color-badge-yellow-text);
+}
+
+.bg-red-100 {
+    background-color: var(--color-badge-red-bg);
+}
+.text-red-800 {
+    color: var(--color-badge-red-text);
+}
+
+.bg-indigo-100 {
+    background-color: var(--color-badge-indigo-bg);
+}
+.text-indigo-800 {
+    color: var(--color-badge-indigo-text);
+}
+
+/* Gradient background */
+.bg-gradient {
+    background: linear-gradient(90deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
+}
+
+/* Dark mode toggle button styling */
+.dark-mode-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Dark mode toggle animation */
+.dark-mode-toggle i {
+    transition: transform 0.5s ease;
+}
+
+.dark-mode-toggle:hover i {
+    transform: rotate(30deg);
+}
+
+/* Quiz card hover effects */
+.quiz-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px var(--color-shadow-dark);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Override for form elements */
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--color-border-accent);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+}
+
+/* Dropdown menu background */
+#user-menu-dropdown {
+    background-color: var(--color-bg-primary);
+    border-color: var(--color-border);
+}
+
+/* Custom styles for categories */
+.flow-root {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* Additional CSS rules for quiz-specific elements */
+/* Progress circle */
+#score-circle {
+    stroke: var(--color-progress-fill);
+}
+path[stroke="#E5E7EB"] {
+    stroke: var(--color-progress-bg);
+}
+#score-percentage {
+    color: var(--color-text-accent);
+}
+
+
+
+/* Quiz-specific Dark Mode Overrides */
+
+/* Answer options */
+.dark #answer-container .border-gray-200 {
+    border-color: var(--color-border);
+}
+
+.dark #answer-container div:hover {
+    background-color: #2d3748 !important; /* darker hover background */
+}
+
+.dark #answer-container label {
+    color: var(--color-text-secondary); /* ensure label text is visible */
+}
+
+.dark #answer-container .bg-indigo-50 {
+    background-color: rgba(79, 70, 229, 0.2) !important; /* darker selected background */
+}
+
+/* Fix radio buttons in dark mode */
+.dark input[type="radio"] {
+    border-color: #6b7280;
+}
+
+/* Quiz navigation buttons */
+.dark #prev-question-btn {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
+}
+
+.dark #prev-question-btn:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* Fix the colors for the progress bars */
+.dark .bg-gray-200 {
+    background-color: #4b5563 !important;
+}
+
+.dark .text-gray-700 {
+    color: #e5e7eb !important; 
+}
+
+/* Fix the review cards in the results */
+.dark #review-container .border {
+    border-color: var(--color-border);
+}
+
+.dark #review-container .text-gray-700 {
+    color: var(--color-text-secondary) !important;
+}
+
+.dark #review-container .bg-green-50 {
+    background-color: rgba(6, 78, 59, 0.3) !important;
+}
+
+.dark #review-container .bg-red-50 {
+    background-color: rgba(153, 27, 27, 0.3) !important;
+}
+
+.dark #review-container .border-green-500 {
+    border-color: #10b981 !important;
+}
+
+.dark #review-container .border-red-500 {
+    border-color: #ef4444 !important;
+}
+
+/* Fix rating modal in dark mode */
+.dark #ratingModal .bg-white,
+.dark #loginModal .bg-white {
+    background-color: var(--color-bg-primary);
+}
+
+.dark #ratingModal .bg-gray-50,
+.dark #loginModal .bg-gray-50 {
+    background-color: var(--color-bg-secondary);
+}
+
+/* Fix any other remaining light-colored elements */
+.dark .bg-gray-50 {
+    background-color: var(--color-bg-tertiary) !important;
+}
+
+/* Ensure SVG paths have proper colors */
+.dark svg path[stroke="#E5E7EB"] {
+    stroke: #4b5563;
+}
+
+.dark #score-circle {
+    stroke: #818cf8;
+}
+
+/* Fix font color for rating stars when selected */
+.dark .text-yellow-400 {
+    color: #fbbf24 !important;
+}
+
+/* Fix score percentage and stats */
+.dark #score-percentage, 
+.dark #final-score {
+    color: #818cf8 !important;
+}
+
+.dark #correct-answers {
+    color: #34d399 !important;
+}
+
+.dark #incorrect-answers {
+    color: #f87171 !important;
+}
+
+/* Fix hero section quiz in dark mode */
+.dark .hero-quiz .border-indigo-500,
+.dark .hero-quiz .bg-indigo-50 {
+    background-color: rgba(79, 70, 229, 0.2) !important;
+    border-color: #6366f1 !important; 
+}
+
+.dark .hero-quiz .text-gray-700 {
+    color: #e5e7eb !important;
+}
+
+.dark .hero-quiz .text-gray-900 {
+    color: #f9fafb !important;
+}
+
+.dark .hero-quiz input[type="radio"] {
+    border-color: #6b7280;
+}
+
+.dark .hero-quiz .border {
+    border-color: #4b5563;
+}
+
+.dark .hero-quiz .hover\:bg-indigo-50:hover {
+    background-color: #2d3748 !important;
+}
+
+/* Fix browse page filters text in dark mode */
+.dark input[type="text"],
+.dark input[type="number"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark select,
+.dark textarea {
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-tertiary);
+    border-color: var(--color-border);
+}
+
+.dark h2.text-2xl,
+.dark h3.text-lg,
+.dark .text-gray-900 {
+    color: var(--color-text-primary) !important;
+}
+
+.dark .text-gray-700 {
+    color: var(--color-text-secondary) !important;
+}
+
+.dark #category-filter,
+.dark #difficulty-filter,
+.dark #sort-by,
+.dark #search-input {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+}
+
+.dark #search-input::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+/* Fix dropdown menu in dark mode */
+.dark #user-menu-dropdown {
+    background-color: var(--color-bg-primary);
+    border-color: var(--color-border);
+}
+
+.dark #user-menu-dropdown a {
+    color: var(--color-text-secondary);
+}
+
+.dark #user-menu-dropdown a:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+
+/* Quiz Options Dark Mode Fixes */
+
+/* Fix the indigo background of the quiz options container */
+.dark .bg-indigo-50 {
+    background-color: #2d3748 !important; /* Darker background for the options container */
+    border-color: #4b5563 !important;
+}
+
+/* Fix form elements in quiz options */
+.dark #quiz-options-form select,
+.dark #quiz-options-form input[type="number"] {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+}
+
+/* Fix quiz options labels */
+.dark #quiz-options-form label {
+    color: var(--color-text-secondary);
+}
+
+/* Fix radio buttons in quiz options */
+.dark #quiz-options-form input[type="radio"] {
+    border-color: var(--color-border);
+}
+
+.dark #quiz-options-form .text-gray-700 {
+    color: var(--color-text-secondary) !important;
+}
+
+/* Fix custom timer input visibility */
+.dark #custom-timer-input {
+    background-color: transparent;
+}
+
+.dark #custom-timer-input input {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+}
+
+/* Fix start quiz with options button in dark mode */
+.dark #start-with-options-btn {
+    background-color: var(--color-bg-accent);
+    color: var(--color-text-on-accent);
+}
+
+.dark #start-with-options-btn:hover {
+    background-color: var(--color-bg-accent-hover);
+}
+
+/* Ensure the quiz options container background is correctly colored */
+.dark .bg-indigo-100 {
+    background-color: var(--color-badge-indigo-bg);
+    color: var(--color-badge-indigo-text);
+}
+
+/* Fix number of questions select dropdown */
+.dark #question-count {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+    background-image: none !important;
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1.5em 1.5em;
+}
+
+
+/* Fix hover state for learning materials in dark mode */
+.dark #learning-materials-list li:hover {
+    background-color: var(--color-bg-tertiary) !important;
+}
+
+.dark #learning-materials-list .view-material-btn,
+.dark #learning-materials-list a {
+    background-color: var(--color-badge-indigo-bg);
+    color: var(--color-badge-indigo-text);
+}
+
+.dark #learning-materials-list .view-material-btn:hover,
+.dark #learning-materials-list a:hover {
+    background-color: var(--color-bg-accent);
+    color: var(--color-text-on-accent);
+}
+
+/* Fix file upload dropzone in dark mode */
+.dark #file-content-container .border-dashed {
+    border-color: var(--color-border);
+    background-color: var(--color-bg-secondary);
+}
+
+.dark #file-content-container .text-gray-400 {
+    color: var(--color-text-tertiary);
+}
+
+.dark #file-content-container .text-gray-600 {
+    color: var(--color-text-secondary);
+}
+
+.dark #file-content-container .bg-white {
+    background-color: transparent;
+}
+
+/* File upload hover state */
+.dark #file-content-container .border-dashed.drag-over {
+    border-color: var(--color-border-accent);
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+.dark select.appearance-none {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none !important; /* Override any default background images */
+}
+
+/* Ensure the dropdown arrow is visible in dark mode */
+.dark .relative svg.text-gray-400 {
+    color: var(--color-text-tertiary) !important;
+}
+
+
+
+.dark #questions-container .hover\:bg-gray-50:hover {
+    background-color: #303b4d !important; /* darker background that maintains contrast */
+}
+
+.dark #questions-container .p-6:hover {
+    background-color: #374151 !important;
+}
+
+.dark #questions-container .p-6:hover .text-gray-700,
+.dark #questions-container .p-6:hover .text-gray-900,
+.dark #questions-container .p-6:hover .text-sm {
+    color: #f3f4f6 !important; /* ensure text remains light and readable */
+}
+
+.dark #questions-container .p-6:hover .text-gray-500 {
+    color: #d1d5db !important; /* lighter color for secondary text */
+}

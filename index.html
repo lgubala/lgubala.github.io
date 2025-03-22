@@ -1,526 +1,900 @@
 <!DOCTYPE html>
-<html lang="en">
+
+<html lang="en" class="">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PentestPro - Interactive Learning</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles-enhanced.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-</head>
-<body>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>QuizGen - Learn Smarter</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <link rel="stylesheet" href="css/dark-mode.css" />
+
+    <style>
+        .quiz-card:hover {
+            transform: translateY(-5px);
+
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .bg-gradient {
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+        }
+    </style>
+
     <script>
-        window.PptxJsHandler = {
-            async extractText(arrayBuffer) {
-                try {
-                    const zip = new JSZip();
-                    
-                    // More robust loading with better error handling
-                    let zipData;
-                    try {
-                        zipData = await zip.loadAsync(arrayBuffer);
-                    } catch (zipError) {
-                        console.error("JSZip loading error:", zipError);
-                        throw new Error("Failed to open PowerPoint file as a ZIP archive. The file may be corrupted or not a valid PPTX file.");
-                    }
-                    
-                    // Check if this looks like a PowerPoint file (should have ppt/presentation.xml)
-                    if (!zipData.files['ppt/presentation.xml']) {
-                        throw new Error("This file doesn't appear to be a valid PowerPoint file (missing presentation.xml)");
-                    }
-                    
-                    // Find all XML files that contain slide content
-                    const slideFiles = Object.keys(zipData.files)
-                        .filter(filename => filename.startsWith('ppt/slides/slide') && filename.endsWith('.xml'))
-                        .sort((a, b) => {
-                            // Extract slide numbers, defaulting to 0 if parsing fails
-                            const matchA = a.match(/slide(\d+)\.xml/);
-                            const matchB = b.match(/slide(\d+)\.xml/);
-                            const numA = matchA ? parseInt(matchA[1]) : 0;
-                            const numB = matchB ? parseInt(matchB[1]) : 0;
-                            return numA - numB;
-                        });
-                    
-                    if (slideFiles.length === 0) {
-                        console.warn("No slide content files found in the PowerPoint");
-                        // Return a fallback message rather than failing
-                        return ["[PowerPoint has no extractable slides]"];
-                    }
-                    
-                    // Extract text from each slide
-                    const slideTexts = [];
-                    let extractedAny = false;
-                    
-                    for (const slideFile of slideFiles) {
-                        try {
-                            // Get the file content
-                            const content = await zipData.files[slideFile].async('text');
-                            
-                            // Extract text from the slide
-                            const textContent = this.extractTextFromSlideXML(content);
-                            
-                            if (textContent.trim()) {
-                                slideTexts.push(`Slide ${slideTexts.length + 1}: ${textContent}`);
-                                extractedAny = true;
-                            } else {
-                                slideTexts.push(`Slide ${slideTexts.length + 1}: [No text content]`);
-                            }
-                        } catch (slideError) {
-                            console.warn(`Error processing slide ${slideFile}:`, slideError);
-                            slideTexts.push(`Slide ${slideTexts.length + 1}: [Error extracting content]`);
-                        }
-                    }
-                    
-                    if (!extractedAny) {
-                        console.warn("Could not extract meaningful text from any slides");
-                        return ["[Could not extract text content from PowerPoint]"];
-                    }
-                    
-                    return slideTexts;
-                } catch (error) {
-                    console.error('Error parsing PowerPoint:', error);
-                    throw new Error('Failed to parse PowerPoint file');
-                }
-            },
-            
-            // Improved text extraction from slide XML
-            extractTextFromSlideXML(xml) {
-                // More comprehensive regex to handle different text tag formats
-                const textMatches = [];
-                
-                // Match standard text content
-                const standardTextRegex = /<a:t>([^<]*)<\/a:t>/g;
-                let match;
-                while ((match = standardTextRegex.exec(xml)) !== null) {
-                    textMatches.push(match[1]);
-                }
-                
-                // Match text with preserved whitespace
-                const preservedSpaceRegex = /<a:t xml:space="preserve">([^<]*)<\/a:t>/g;
-                while ((match = preservedSpaceRegex.exec(xml)) !== null) {
-                    textMatches.push(match[1]);
-                }
-                
-                // Match paragraph breaks with line breaks
-                const paragraphRegex = /<a:p>/g;
-                const paragraphCount = (xml.match(paragraphRegex) || []).length;
-                
-                // Join text with appropriate spacing
-                let text = textMatches.join(' ');
-                
-                // Clean up text: handle escaped characters and normalize whitespace
-                text = text
-                    .replace(/&amp;/g, '&')
-                    .replace(/&lt;/g, '<')
-                    .replace(/&gt;/g, '>')
-                    .replace(/&quot;/g, '"')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-                    
-                return text;
-            }
-        };
+        // Check for dark mode preference
+
+        const darkModeKey = "quizgen-dark-mode";
+
+        const savedPreference = localStorage.getItem(darkModeKey);
+
+        if (
+            savedPreference === "true" ||
+            (savedPreference === null &&
+                window.matchMedia &&
+                window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+            document.documentElement.classList.add("dark");
+        }
     </script>
-    <div class="app-container">
-        <header>
-            <div class="logo">
-                <i class="fas fa-shield-alt"></i>
-                <h1>PentestPro</h1>
-            </div>
-            <div class="theme-toggle">
-                <i class="fas fa-moon" id="darkModeToggle"></i>
-            </div>
-        </header>
-        
-        <main>
-            <!-- Welcome Screen -->
-            <section class="welcome-screen" id="welcomeScreen">
-                <div class="welcome-content">
-                    <h2>Master Penetration Testing</h2>
-                    <p>Test your knowledge, identify weaknesses, and improve your skills through adaptive learning.</p>
-                    
-                    <div class="stats-overview" id="statsOverview">
-                        <h3>Your Progress</h3>
-                        <div class="stats-cards">
-                            <div class="stats-card">
-                                <div class="stats-card-header">
-                                    <i class="fas fa-trophy"></i>
-                                    <h4>Quizzes Completed</h4>
-                                </div>
-                                <p class="stats-value" id="quizzesCompleted">0</p>
-                            </div>
-                            <div class="stats-card">
-                                <div class="stats-card-header">
-                                    <i class="fas fa-chart-line"></i>
-                                    <h4>Overall Score</h4>
-                                </div>
-                                <p class="stats-value" id="overallScore">0%</p>
-                            </div>
-                            <div class="stats-card">
-                                <div class="stats-card-header">
-                                    <i class="fas fa-fire"></i>
-                                    <h4>Current Streak</h4>
-                                </div>
-                                <p class="stats-value" id="currentStreak">0 days</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="chapter-performance" id="chapterPerformance">
-                        <h3>Chapter Performance</h3>
-                        <div class="chapter-bars" id="chapterBars">
-                            <!-- Chapter performance bars will be added here -->
-                        </div>
-                    </div>
-                    
-                    <div class="confidence-details" id="confidenceDetails">
-                        <h3>Knowledge Confidence</h3>
-                        <p class="confidence-description">This shows how confident you can be in your knowledge of each topic based on your quiz performance.</p>
-                        <div class="confidence-cards" id="confidenceCards">
-                            <!-- Will be populated dynamically -->
-                        </div>
-                    </div>
-                    
-                    <div class="action-buttons">
-                        <button class="button primary" id="startBtn">
-                            <i class="fas fa-play"></i> Start Quiz
-                        </button>
-                        <button class="button secondary" id="reviewBtn">
-                            <i class="fas fa-history"></i> Review
-                        </button>
-                        <button class="button secondary" id="resetDataBtn">
-                            <i class="fas fa-trash-alt"></i> Reset
-                        </button>
-                        <button class="button secondary" id="manageSavedBtn">
-                            <i class="fas fa-folder"></i> Manage Saved Quizzes
-                        </button>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Chapter Selection Screen -->
-            <section class="chapter-selection hidden" id="chapterSelection">
-                <div class="container">
-                    <h2>Choose Your Focus</h2>
-                    <p>Select which topics you want to be tested on and adjust your quiz settings.</p>
-                    
-                    <div class="quiz-options">
-                        <div class="quiz-mode">
-                            <h3>Quiz Mode</h3>
-                            <div class="mode-selector">
-                                <div class="mode-option selected" data-mode="standard">
-                                    <i class="fas fa-random"></i>
-                                    <span>Standard</span>
-                                    <p>Random selection of questions</p>
-                                </div>
-                                <div class="mode-option" data-mode="adaptive">
-                                    <i class="fas fa-bullseye"></i>
-                                    <span>Adaptive</span>
-                                    <p>Focus on your weak areas</p>
-                                </div>
-                                <div class="mode-option" data-mode="review">
-                                    <i class="fas fa-redo"></i>
-                                    <span>Review</span>
-                                    <p>Questions you've missed before</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="chapter-options-container">
-                            <h3>Choose Chapters</h3>
-                            <div class="chapter-options" id="chapterOptionsContainer">
-                                <!-- Chapter options will be dynamically added here -->
-                                <!-- This section will be populated by the renderChapterOptions function -->
-                            </div>
-                        </div>
-                        
-                        <div class="quiz-settings">
-                            <h3>Quiz Settings</h3>
-                            <div class="setting-item">
-                                <label for="questionCount">Number of questions:</label>
-                                <select id="questionCount">
-                                    <option value="5">5 questions</option>
-                                    <option value="10" selected>10 questions</option>
-                                    <option value="15">15 questions</option>
-                                    <option value="20">20 questions</option>
-                                    <option value="all">All available</option>
-                                </select>
-                            </div>
-                            <div class="setting-item">
-                                <label for="timeLimit">Time limit per question:</label>
-                                <select id="timeLimit">
-                                    <option value="0">No time limit</option>
-                                    <option value="30">30 seconds</option>
-                                    <option value="60">1 minute</option>
-                                    <option value="120">2 minutes</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="buttons-container">
-                        <button class="button secondary" id="backToWelcomeBtn">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </button>
-                        <button class="button primary" id="startQuizBtn">
-                            <i class="fas fa-play"></i> Start
-                        </button>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Quiz Container -->
-            <section class="quiz-container hidden" id="quizContainer">
-                <div class="container">
-                    <div class="quiz-header">
-                        <div class="progress-container">
-                            <div class="progress-info">
-                                <span>Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></span>
-                                <span id="timerDisplay" class="hidden"><i class="fas fa-clock"></i> <span id="timeRemaining">60</span>s</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress" id="progressBar"></div>
-                            </div>
-                        </div>
-                        <div class="quiz-chapter" id="currentChapter">Chapter</div>
-                    </div>
-                    
-                    <div class="question-container">
-                        <div class="question" id="questionText"></div>
-                        <div class="options" id="optionsContainer"></div>
-                    </div>
-                    
-                    <button class="button primary hidden" id="nextBtn">
-                        <span>Next</span> <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
-            </section>
-            
-            <!-- Results Container -->
-            <section class="results-container hidden" id="resultsContainer">
-                <div class="container">
-                    <div class="results-header">
-                        <h2>Quiz Results</h2>
-                        <div class="result-summary" id="resultSummary"></div>
-                    </div>
-                    
-                    <div class="results-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h3>Correct</h3>
-                                <p id="correctCount">0</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-times-circle"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h3>Incorrect</h3>
-                                <p id="incorrectCount">0</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-percentage"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h3>Accuracy</h3>
-                                <p id="accuracyValue">0%</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h3>Time</h3>
-                                <p id="timeSpent">0 min</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="weakness-analysis" id="weaknessAnalysis">
-                        <h3>Areas to Improve</h3>
-                        <div class="weakness-tags" id="weaknessTags">
-                            <!-- Will be populated dynamically -->
-                        </div>
-                    </div>
-                    
-                    <div class="result-details" id="resultDetails">
-                        <!-- Answer review details will be here -->
-                    </div>
-                    
-                    <div class="buttons-container">
-                        <button class="button secondary" id="newQuizBtn">
-                            <i class="fas fa-home"></i> Home
-                        </button>
-                        <button class="button" id="focusWeaknessBtn">
-                            <i class="fas fa-bullseye"></i> Weaknesses
-                        </button>
-                        <button class="button" id="newRandomBtn">
-                            <i class="fas fa-random"></i> New Random Quiz
-                        </button>
-                        <button class="button primary" id="restartBtn">
-                            <i class="fas fa-redo"></i> Retry Same Questions
-                        </button>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Review Mistakes Screen -->
-            <section class="review-mistakes hidden" id="reviewMistakesScreen">
-                <div class="container">
-                    <h2>Review Past Mistakes</h2>
-                    <p>These are questions you've had trouble with in the past. Practice makes perfect!</p>
-                    
-                    <div class="filter-controls">
-                        <div class="filter-item">
-                            <label for="chapterFilter">Chapter:</label>
-                            <select id="chapterFilter">
-                                <option value="all">All Chapters</option>
-                                <!-- Will be filled dynamically -->
-                            </select>
-                        </div>
-                        <div class="filter-item">
-                            <label for="dateFilter">Time period:</label>
-                            <select id="dateFilter">
-                                <option value="all">All Time</option>
-                                <option value="week">Last Week</option>
-                                <option value="month">Last Month</option>
-                                <option value="three_months">Last 3 Months</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="missed-questions" id="missedQuestions">
-                        <!-- Will be filled dynamically -->
-                        <div class="no-mistakes-message">
-                            <i class="fas fa-check-circle"></i>
-                            <p>Great job! You haven't missed any questions yet.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="buttons-container">
-                        <button class="button secondary" id="backToHomeBtn">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </button>
-                        <button class="button primary" id="practiceSelectedBtn">
-                            <i class="fas fa-graduation-cap"></i> Practice
-                        </button>
-                    </div>
-                </div>
-            </section>
+</head>
 
-            <!-- Saved Quizzes Section -->
-            <section class="saved-quizzes-section hidden" id="savedQuizzesSection">
-                <div class="container">
-                    <h2>Manage Saved Quizzes</h2>
-                    <p>Here you can view and manage all quizzes you've created from PowerPoint presentations.</p>
-                    
-                    <div class="saved-quiz-list" id="savedQuizList">
-                        <!-- This will be populated dynamically -->
-                        <div class="no-quizzes-message">
-                            <i class="fas fa-info-circle"></i>
-                            <p>You haven't created any quizzes yet. Use the Chapter Creator to make a quiz from a PowerPoint file.</p>
+<body class="bg-gray-50 font-sans">
+    <script src="js/api.js"></script>
+
+    <script src="js/auth.js"></script>
+
+    <script src="js/navigation.js"></script>
+
+    <script src="js/dark-mode.js"></script>
+
+    <script src="js/ui-utils.js"></script>
+
+    <script src="js/auth-handler.js"></script>
+
+    <script src="js/featured-quizzes.js"></script>
+
+    <script src="js/main.js"></script>
+
+    <script src="js/toast.js"></script>
+
+    <!-- Navigation -->
+
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="index.html">
+                            <span class="text-2xl font-bold text-indigo-600">QuizGen</span>
+                        </a>
+                    </div>
+
+                    <!-- Navigation Links - Visible to all -->
+
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="index.html"
+                            class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Home
+                        </a>
+
+                        <a href="browse.html"
+                            class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Browse
+                        </a>
+
+                        <a href="bundles.html"
+                            class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Bundles
+                        </a>
+
+                        <!-- Navigation Links - Only visible when logged in -->
+
+                        <a href="my-quizzes.html"
+                            class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium user-only hidden">
+                            My Quizzes
+                        </a>
+
+                        <a href="create-quiz.html"
+                            class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium user-only hidden">
+                            Create
+                        </a>
+                    </div>
+                </div>
+
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <!-- Login Button - Only visible when logged out -->
+
+                    <button id="loginBtn"
+                        class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 guest-only">
+                        Sign in
+                    </button>
+
+                    <button id="dark-mode-toggle"
+                        class="mr-4 dark-mode-toggle p-2 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none"
+                        title="Switch to Dark Mode">
+                        <span class="sr-only">Toggle dark mode</span>
+
+                        <i id="dark-mode-icon" class="fas fa-moon"></i>
+                    </button>
+
+                    <!-- User Dropdown - Only visible when logged in -->
+
+                    <div id="userDropdown" class="ml-3 relative hidden user-only">
+                        <div>
+                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none"
+                                id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                <span class="sr-only">Open user menu</span>
+
+                                <div
+                                    class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-medium mr-2">
+                                    <span id="user-initials">U</span>
+                                </div>
+
+                                <span id="username-display" class="text-gray-700">User</span>
+
+                                <svg class="ml-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd"
+                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- User Dropdown Menu -->
+
+                        <div id="user-menu-dropdown"
+                            class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                            role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
+                            <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                role="menuitem">Profile</a>
+
+                            <a href="my-quizzes.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                role="menuitem">My Quizzes</a>
+
+                            <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                role="menuitem">Sign out</a>
                         </div>
                     </div>
-                    
-                    <div class="buttons-container">
-                        <button class="button secondary" id="backFromSavedBtn">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </button>
-                        <button class="button warning" id="clearAllSavedBtn">
-                            <i class="fas fa-trash"></i> Clear All Saved Quizzes
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- PowerPoint Quiz Creator -->
-            <div class="chapter-creator">
-                <h3>Create New Quiz from PowerPoint</h3>
-                <p>Upload a PowerPoint presentation to generate quiz questions using AI.</p>
-                
-                <div class="upload-area" id="uploadArea">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <p>Drag & drop PowerPoint files here or click to browse</p>
-                    <input type="file" id="fileUpload" accept=".ppt,.pptx" hidden>
-                </div>
-                
-                <div class="chapter-details hidden" id="chapterDetails">
-                    <div class="form-group">
-                        <label for="chapterTitle">Quiz Title:</label>
-                        <input type="text" id="chapterTitle" placeholder="Enter a title for this quiz">
-                    </div>
-                    <div class="form-group">
-                        <label for="chapterId">Quiz ID (no spaces):</label>
-                        <input type="text" id="chapterId" placeholder="quizIdWithoutSpaces">
-                        <small>This is used internally to identify the quiz. Use only letters, numbers, and hyphens.</small>
-                    </div>
-                </div>
-                
-                <div class="processing-status hidden" id="processingStatus">
-                    <div class="spinner"></div>
-                    <p>Processing presentation... <span id="processingInfo"></span></p>
-                </div>
-                
-                <div class="ai-prompt-area hidden" id="aiPromptArea">
-                    <h4>AI Prompt</h4>
-                    <p>Copy this prompt and paste it into ChatGPT or another AI assistant:</p>
-                    <div class="prompt-container">
-                        <pre id="aiPrompt"></pre>
-                        <button class="button small" id="copyPromptBtn">
-                            <i class="fas fa-copy"></i> Copy
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="ai-response-area hidden" id="aiResponseArea">
-                    <h4>Paste AI Response</h4>
-                    <p>Paste the AI's response below:</p>
-                    <textarea id="aiResponse" rows="10" placeholder="Paste the AI's response here..."></textarea>
-                    <button class="button primary" id="generateFilesBtn" disabled>
-                        <i class="fas fa-magic"></i> Generate Quiz
-                    </button>
-                </div>
-                
-                <div class="result-area hidden" id="resultArea">
-                    <h4>Quiz Generated</h4>
-                    <div class="success-message">
-                        <i class="fas fa-check-circle"></i>
-                        <div id="chapterInstruction"></div>
-                    </div>
-                </div>
-                
-                <div class="upload-actions">
-                    <button class="button primary" id="processFileBtn" disabled>
-                        <i class="fas fa-cogs"></i> Process File
-                    </button>
                 </div>
             </div>
-        </main>
-        
-        <footer>
-            <p>&copy; 2025 PentestPro Learning System</p>
-            <p>Keep learning, keep testing, stay secure.</p>
-        </footer>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+
+    <div class="relative overflow-hidden bg-gradient pb-16 pt-10">
+        <!-- Background Pattern -->
+
+        <div class="absolute inset-0 opacity-10">
+            <svg class="h-full w-full" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+                <!-- Question mark patterns -->
+
+                <circle cx="400" cy="400" r="200" fill="none" stroke="white" stroke-width="2" />
+
+                <path d="M380 460 L380 440 Q380 390 430 390 Q480 390 480 340 Q480 290 430 290 Q380 290 380 340"
+                    stroke="white" stroke-width="15" fill="none" stroke-linecap="round" />
+
+                <circle cx="380" cy="500" r="10" fill="white" />
+
+                <!-- Additional patterns -->
+
+                <circle cx="200" cy="200" r="50" fill="none" stroke="white" stroke-width="2" />
+
+                <circle cx="600" cy="600" r="50" fill="none" stroke="white" stroke-width="2" />
+
+                <circle cx="200" cy="600" r="50" fill="none" stroke="white" stroke-width="2" />
+
+                <circle cx="600" cy="200" r="50" fill="none" stroke="white" stroke-width="2" />
+            </svg>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
+                <!-- Text Content -->
+
+                <div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+                    <h1 class="text-4xl tracking-tight font-extrabold sm:text-5xl md:text-6xl text-white">
+                        From
+                        <span class="relative">
+                            <span class="relative inline-block text-yellow-300">
+                                Notes
+
+                                <svg class="absolute -bottom-1 w-full" height="10" viewBox="0 0 100 10"
+                                    preserveAspectRatio="none">
+                                    <path d="M0 5 Q50 10 100 5" stroke="#FBBF24" stroke-width="4" fill="none" />
+                                </svg>
+                            </span>
+                        </span>
+
+                        to
+                        <span class="relative">
+                            <span class="relative inline-block text-yellow-300">
+                                Mastery
+
+                                <svg class="absolute -bottom-1 w-full" height="10" viewBox="0 0 100 10"
+                                    preserveAspectRatio="none">
+                                    <path d="M0 5 Q50 10 100 5" stroke="#FBBF24" stroke-width="4" fill="none" />
+                                </svg>
+                            </span>
+                        </span>
+                    </h1>
+
+                    <p class="mt-3 text-base sm:mt-5 sm:text-xl lg:text-lg xl:text-xl text-white font-light">
+                        AI-powered quiz generation from your study materials.
+
+                        <span class="font-semibold">Learn smarter, not harder.</span>
+                    </p>
+
+                    <div class="mt-8 sm:flex sm:justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
+                        <!-- For logged-in users -->
+
+                        <a href="create-quiz.html" id="createQuizLink"
+                            class="hidden user-only w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50 transform transition-transform hover:-translate-y-1">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+
+                            Create Your Quiz
+                        </a>
+
+                        <!-- For guests -->
+
+                        <button id="createQuizBtn"
+                            class="guest-only w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50 transform transition-transform hover:-translate-y-1">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+
+                            Create Your Quiz
+                        </button>
+
+                        <a href="browse.html"
+                            class="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-white text-base font-medium rounded-md text-white bg-transparent hover:bg-white hover:bg-opacity-10 transform transition-transform hover:-translate-y-1">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122">
+                                </path>
+                            </svg>
+
+                            Explore Quizzes
+                        </a>
+                    </div>
+
+                    <!-- Key features -->
+
+                    <div class="mt-8 guest-only">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-yellow-300 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+
+                            <p class="text-sm text-white">
+                                Generate quizzes from PDFs, docs, and text
+                            </p>
+                        </div>
+
+                        <div class="flex items-center space-x-3 mb-2">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-yellow-300 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+
+                            <p class="text-sm text-white">
+                                Track progress and identify knowledge gaps
+                            </p>
+                        </div>
+
+                        <div class="flex items-center space-x-3">
+                            <div
+                                class="flex-shrink-0 w-6 h-6 rounded-full bg-yellow-300 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+
+                            <p class="text-sm text-white">
+                                Share quizzes with classmates or students
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Quiz Animation -->
+
+                <div
+                    class="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
+                    <div class="relative w-full rounded-lg shadow-xl overflow-hidden">
+                        <!-- Quiz Paper with Animation Effect -->
+
+                        <div class="bg-white p-6 rounded-lg transform transition-all hero-quiz">
+                            <!-- Quiz Header -->
+
+                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 class="text-lg font-medium text-gray-900">
+                                    Biology Quiz
+                                </h3>
+
+                                <div class="text-sm text-indigo-600">Question 1/10</div>
+                            </div>
+
+                            <!-- Quiz Question -->
+
+                            <div class="mb-6">
+                                <p class="text-gray-800 font-medium mb-4">
+                                    Which of the following is NOT a function of the nervous
+                                    system?
+                                </p>
+
+                                <!-- Quiz Options with Pulse Animation -->
+
+                                <div class="space-y-3">
+                                    <div class="flex items-center p-3 border rounded-lg hover:bg-indigo-50">
+                                        <input type="radio" id="option1" name="answer"
+                                            class="h-4 w-4 text-indigo-600" />
+
+                                        <label for="option1" class="ml-3 text-sm text-gray-700">Signal
+                                            transmission</label>
+                                    </div>
+
+                                    <div class="flex items-center p-3 border rounded-lg hover:bg-indigo-50">
+                                        <input type="radio" id="option2" name="answer"
+                                            class="h-4 w-4 text-indigo-600" />
+
+                                        <label for="option2" class="ml-3 text-sm text-gray-700">Hormone
+                                            production</label>
+                                    </div>
+
+                                    <div class="flex items-center p-3 border border-indigo-500 bg-indigo-50 rounded-lg">
+                                        <input type="radio" id="option3" name="answer" class="h-4 w-4 text-indigo-600"
+                                            checked />
+
+                                        <label for="option3" class="ml-3 text-sm font-medium text-gray-900">Blood
+                                            circulation</label>
+                                    </div>
+
+                                    <div class="flex items-center p-3 border rounded-lg hover:bg-indigo-50">
+                                        <input type="radio" id="option4" name="answer"
+                                            class="h-4 w-4 text-indigo-600" />
+
+                                        <label for="option4" class="ml-3 text-sm text-gray-700">Sensory
+                                            processing</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quiz Navigation -->
+
+                            <div class="flex justify-end">
+                                <button
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 opacity-80 cursor-not-allowed"
+                                    disabled>
+                                    Next
+                                    <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Load scripts -->
-    <script src="js/storage.js"></script>
-    <script src="js/chapters.js"></script>
-    <script src="js/statistics.js"></script>
-    <script src="js/questions/footprinting-scanning.js"></script>
-    <script src="js/questions/information-gathering.js"></script>
-    <script src="js/questions/enumerations.js"></script>
-    <script src="js/quiz-enhanced.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/chapter-generator.js"></script>
-    <script src="js/quizbridge.js"></script>
-    <script src="js/quiz-debugger.js"></script>
+    <!-- Categories Section -->
+
+    <div class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">
+                    Categories
+                </h2>
+
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Explore our quiz library
+                </p>
+
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                    Browse through our extensive collection of quizzes or create your
+                    own.
+                </p>
+            </div>
+
+            <div class="mt-10">
+                <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                    <!-- IT Category -->
+
+                    <div class="pt-6">
+                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8">
+                            <div class="-mt-6">
+                                <div>
+                                    <span
+                                        class="inline-flex items-center justify-center p-3 bg-indigo-500 rounded-md shadow-lg">
+                                        <i class="fas fa-laptop-code text-white text-2xl"></i>
+                                    </span>
+                                </div>
+
+                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">
+                                    Information Technology
+                                </h3>
+
+                                <p class="mt-5 text-base text-gray-500">
+                                    Includes Kubernetes, Penetration Testing, Cloud Computing,
+                                    and more.
+                                </p>
+
+                                <div class="mt-5">
+                                    <a href="browse.html?category=1"
+                                        class="text-base font-medium text-indigo-600 hover:text-indigo-500">
+                                        Explore IT quizzes →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Biology Category -->
+
+                    <div class="pt-6">
+                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8">
+                            <div class="-mt-6">
+                                <div>
+                                    <span
+                                        class="inline-flex items-center justify-center p-3 bg-green-500 rounded-md shadow-lg">
+                                        <i class="fas fa-dna text-white text-2xl"></i>
+                                    </span>
+                                </div>
+
+                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">
+                                    Biology
+                                </h3>
+
+                                <p class="mt-5 text-base text-gray-500">
+                                    Covers Genetics, Human Anatomy, Ecology, Cell Biology, and
+                                    more.
+                                </p>
+
+                                <div class="mt-5">
+                                    <a href="browse.html?category=2"
+                                        class="text-base font-medium text-indigo-600 hover:text-indigo-500">
+                                        Explore Biology quizzes →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History Category -->
+
+                    <div class="pt-6">
+                        <div class="flow-root bg-gray-50 rounded-lg px-6 pb-8">
+                            <div class="-mt-6">
+                                <div>
+                                    <span
+                                        class="inline-flex items-center justify-center p-3 bg-yellow-500 rounded-md shadow-lg">
+                                        <i class="fas fa-landmark text-white text-2xl"></i>
+                                    </span>
+                                </div>
+
+                                <h3 class="mt-8 text-lg font-medium text-gray-900 tracking-tight">
+                                    History
+                                </h3>
+
+                                <p class="mt-5 text-base text-gray-500">
+                                    Includes World Wars, Ancient Civilizations, Modern History,
+                                    and more.
+                                </p>
+
+                                <div class="mt-5">
+                                    <a href="browse.html?category=3"
+                                        class="text-base font-medium text-indigo-600 hover:text-indigo-500">
+                                        Explore History quizzes →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Quizzes -->
+
+    <div class="py-12 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl font-extrabold text-gray-900 mb-8">
+                Featured Quizzes
+            </h2>
+
+            <div id="featured-quizzes-container" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <!-- Quizzes will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+
+    <div class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-base font-semibold tracking-wide uppercase text-indigo-600">
+                    How It Works
+                </h2>
+
+                <p class="mt-1 text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
+                    Three simple steps
+                </p>
+
+                <p class="max-w-xl mt-5 mx-auto text-xl text-gray-500">
+                    From notes to quiz in minutes - it's that easy!
+                </p>
+            </div>
+
+            <div class="mt-16">
+                <div class="lg:grid lg:grid-cols-3 lg:gap-8">
+                    <div class="text-center">
+                        <div
+                            class="flex items-center justify-center h-16 w-16 rounded-md bg-indigo-500 text-white mx-auto">
+                            <i class="fas fa-upload text-2xl"></i>
+                        </div>
+
+                        <h3 class="mt-6 text-xl font-medium text-gray-900">1. Upload</h3>
+
+                        <p class="mt-2 text-base text-gray-500">
+                            Upload your PDF, Word, PowerPoint, or text notes.
+                        </p>
+                    </div>
+
+                    <div class="mt-10 lg:mt-0 text-center">
+                        <div
+                            class="flex items-center justify-center h-16 w-16 rounded-md bg-indigo-500 text-white mx-auto">
+                            <i class="fas fa-cogs text-2xl"></i>
+                        </div>
+
+                        <h3 class="mt-6 text-xl font-medium text-gray-900">
+                            2. Generate
+                        </h3>
+
+                        <p class="mt-2 text-base text-gray-500">
+                            Our AI analyzes your content and creates relevant questions.
+                        </p>
+                    </div>
+
+                    <div class="mt-10 lg:mt-0 text-center">
+                        <div
+                            class="flex items-center justify-center h-16 w-16 rounded-md bg-indigo-500 text-white mx-auto">
+                            <i class="fas fa-pencil-alt text-2xl"></i>
+                        </div>
+
+                        <h3 class="mt-6 text-xl font-medium text-gray-900">
+                            3. Practice
+                        </h3>
+
+                        <p class="mt-2 text-base text-gray-500">
+                            Take the quiz, review your answers, and improve your knowledge.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Quiz Modal -->
+
+    <div id="createQuizModal" class="fixed inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog"
+        aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Create New Quiz
+                            </h3>
+
+                            <div class="mt-6">
+                                <form>
+                                    <div class="mb-4">
+                                        <label for="quizTitle" class="block text-sm font-medium text-gray-700">Quiz
+                                            Title</label>
+
+                                        <input type="text" name="quizTitle" id="quizTitle"
+                                            class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" />
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="categorySelect"
+                                            class="block text-sm font-medium text-gray-700">Category</label>
+
+                                        <select id="categorySelect" name="categorySelect"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                            <option>Information Technology</option>
+
+                                            <option>Biology</option>
+
+                                            <option>History</option>
+
+                                            <option>Mathematics</option>
+
+                                            <option>Physics</option>
+
+                                            <option>Chemistry</option>
+
+                                            <option>Other</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="subcategoryInput"
+                                            class="block text-sm font-medium text-gray-700">Subcategory</label>
+
+                                        <input type="text" name="subcategoryInput" id="subcategoryInput"
+                                            class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" />
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700">Upload Learning
+                                            Material</label>
+
+                                        <div
+                                            class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                            <div class="space-y-1 text-center">
+                                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor"
+                                                    fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                                    <path
+                                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                                        stroke-width="2" stroke-linecap="round"
+                                                        stroke-linejoin="round" />
+                                                </svg>
+
+                                                <div class="flex text-sm text-gray-600">
+                                                    <label for="file-upload"
+                                                        class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                                        <span>Upload a file</span>
+
+                                                        <input id="file-upload" name="file-upload" type="file"
+                                                            class="sr-only" />
+                                                    </label>
+
+                                                    <p class="pl-1">or drag and drop</p>
+                                                </div>
+
+                                                <p class="text-xs text-gray-500">
+                                                    PDF, DOC, DOCX, PPT, PPTX up to 10MB
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="visibilitySelect"
+                                            class="block text-sm font-medium text-gray-700">Visibility</label>
+
+                                        <select id="visibilitySelect" name="visibilitySelect"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                            <option>Private</option>
+
+                                            <option>Public</option>
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="generateQuizBtn"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Generate Quiz
+                    </button>
+
+                    <button type="button" id="cancelQuizBtn"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+
+    <div id="loginModal" class="fixed inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog"
+        aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Sign In
+                            </h3>
+
+                            <div class="mt-6">
+                                <form id="login-form">
+                                    <div class="mb-4">
+                                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+
+                                        <input type="email" name="email" id="email"
+                                            class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" />
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="password"
+                                            class="block text-sm font-medium text-gray-700">Password</label>
+
+                                        <input type="password" name="password" id="password"
+                                            class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border" />
+                                    </div>
+
+                                    <div class="mt-6">
+                                        <button type="submit" id="sign-in-btn"
+                                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                            Sign in
+                                        </button>
+                                    </div>
+                                    <div class="mt-4 text-center text-sm text-gray-600">
+                                        Don't have an account?
+                                        <a href="register.html" class="font-medium text-indigo-600 hover:text-indigo-500">
+                                            Sign up
+                                        </a>
+                                    </div>
+                                </form>
+
+                                <div class="mt-6">
+                                    <div class="relative">
+                                        <div class="absolute inset-0 flex items-center">
+                                            <div class="w-full border-t border-gray-300"></div>
+                                        </div>
+
+                                        <div class="relative flex justify-center text-sm">
+                                            <span class="px-2 bg-white text-gray-500">Or continue with</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-6">
+                                        <button
+                                            class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                            <i class="fab fa-google mr-2"></i> Google
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="closeLoginBtn"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Close
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+
+    <footer class="bg-gray-800 text-white">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-bold mb-4">QuizGen</h3>
+
+                    <p class="text-gray-300">
+                        Helping students learn smarter with AI-powered quizzes generated
+                        from their study materials.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Quick Links</h3>
+
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="index.html" class="text-gray-300 hover:text-white">Home</a>
+                        </li>
+
+                        <li>
+                            <a href="browse.html" class="text-gray-300 hover:text-white">Browse Quizzes</a>
+                        </li>
+
+                        <li>
+                            <a href="bundles.html" class="text-gray-300 hover:text-white">Bundles</a>
+                        </li>
+
+                        <li>
+                            <a href="create-quiz.html" class="text-gray-300 hover:text-white user-only">Create Quiz</a>
+                        </li>
+
+                        <li>
+                            <a href="my-quizzes.html" class="text-gray-300 hover:text-white user-only">My Quizzes</a>
+                        </li>
+
+                        <li>
+                            <a href="login.html" class="text-gray-300 hover:text-white guest-only">Sign In</a>
+                        </li>
+
+                        <li>
+                            <a href="register.html" class="text-gray-300 hover:text-white guest-only">Register</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Contact</h3>
+
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="support.html" class="text-gray-300 hover:text-white">Support</a>
+                        </li>
+
+                        <li>
+                            <a href="privacy.html" class="text-gray-300 hover:text-white">Privacy Policy</a>
+                        </li>
+
+                        <li>
+                            <a href="terms.html" class="text-gray-300 hover:text-white">Terms of Service</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-8 border-t border-gray-700 pt-8 flex justify-between">
+                <p class="text-gray-300">© 2025 QuizGen. All rights reserved.</p>
+
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-300 hover:text-white">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+
+                    <a href="#" class="text-gray-300 hover:text-white">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+
+                    <a href="#" class="text-gray-300 hover:text-white">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
+
 </html>

@@ -1,0 +1,129 @@
+/* Custom styles for QuizGen */
+
+
+
+/* Transitions */
+
+.transition-all {
+
+    transition: all 0.3s ease;
+
+}
+
+
+
+/* Card hover effects */
+
+.quiz-card {
+
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+}
+
+
+
+.quiz-card:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+
+}
+
+
+
+/* Custom colors and gradients */
+
+.text-gradient {
+
+    background: linear-gradient(90deg, #4F46E5, #7C3AED);
+
+    -webkit-background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+
+}
+
+
+
+/* Stars rating */
+
+.star-rating .fas {
+
+    color: #FBBF24;
+
+}
+
+
+
+.star-rating .far {
+
+    color: #E5E7EB;
+
+}
+
+
+
+/* Form focus states */
+
+input:focus, textarea:focus, select:focus {
+
+    outline: none;
+
+    border-color: #6366F1;
+
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+
+}
+
+
+
+/* Custom animations */
+
+@keyframes fadeIn {
+
+    from { opacity: 0; }
+
+    to { opacity: 1; }
+
+}
+
+
+
+.animate-fadeIn {
+
+    animation: fadeIn 0.5s ease-in-out;
+
+}
+
+
+
+@keyframes slideUp {
+
+    from { transform: translateY(20px); opacity: 0; }
+
+    to { transform: translateY(0); opacity: 1; }
+
+}
+
+
+
+.animate-slideUp {
+
+    animation: slideUp 0.5s ease-out;
+
+}
+
+
+
+/* Responsive adjustments */
+
+@media (max-width: 640px) {
+
+    .hero-text {
+
+        font-size: 2rem;
+
+    }
+
+}
