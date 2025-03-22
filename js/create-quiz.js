@@ -174,7 +174,10 @@ class CreateQuizManager {
         
         if (event.target.files.length > 0) {
             const file = event.target.files[0];
+            const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            
             console.log(`File selected: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(2)} KB)`);
+            console.log(`File extension: ${fileExtension}`);
             
             // Check file size (10MB limit)
             if (file.size > 10 * 1024 * 1024) {
@@ -186,8 +189,9 @@ class CreateQuizManager {
                 return;
             }
             
-            // Check file type
-            const allowedTypes = [
+            // Check file type with more verbose logging
+            const allowedExtensions = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.txt'];
+            const allowedMimeTypes = [
                 'application/pdf', 
                 'application/msword', 
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -196,14 +200,16 @@ class CreateQuizManager {
                 'text/plain'
             ];
             
-            if (!allowedTypes.includes(file.type)) {
-                console.warn(`File type not explicitly supported: ${file.type}`);
-                // Still allow it, but warn the user
-                if (confirm('This file type may not be fully supported. Continue anyway?')) {
-                    // User wants to proceed
-                    console.log('User chose to proceed with potentially unsupported file type');
-                } else {
-                    // User canceled
+            const isValidExtension = allowedExtensions.includes(fileExtension);
+            const isValidMimeType = allowedMimeTypes.includes(file.type);
+            
+            console.log(`File validation: Extension valid: ${isValidExtension}, MIME type valid: ${isValidMimeType}`);
+            
+            if (!isValidExtension && !isValidMimeType) {
+                console.warn(`File type not supported: ${file.type}, extension: ${fileExtension}`);
+                const proceed = confirm('This file type may not be fully supported. Would you like to proceed anyway? You may have better results by pasting content directly.');
+                
+                if (!proceed) {
                     console.log('User canceled file selection due to unsupported type');
                     this.fileUpload.value = ''; // Clear the file input
                     if (this.selectedFileName) {
@@ -211,6 +217,7 @@ class CreateQuizManager {
                     }
                     return;
                 }
+                console.log('User chose to proceed with potentially unsupported file type');
             }
             
             // Update UI with file name
