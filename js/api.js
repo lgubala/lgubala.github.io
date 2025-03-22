@@ -4,7 +4,7 @@
  */
 class ApiService {
 constructor() {
-this.baseUrl = 'http://localhost:5000/api';
+this.baseUrl = 'https://quiz-api-9imb.onrender.com';
 this.token = localStorage.getItem('token');
 console.log('API Service initialized', this.token ? 'Token exists' : 'No token found');
 }
