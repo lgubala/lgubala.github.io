@@ -23,7 +23,6 @@ class App {
         
         // Home page elements
         this.categoriesContainer = document.getElementById('categories-container');
-        this.featuredQuizzesContainer = document.getElementById('featured-quizzes');
         this.createQuizBtn = document.getElementById('createQuizBtn');
         
         // Modal elements
@@ -45,13 +44,9 @@ class App {
         console.log('App init');
         this.attachEventListeners();
         
-        // Load featured quizzes if on homepage
-        if (document.getElementById('featured-quizzes-container')) {
-                await this.loadFeaturedQuizzes();
-        }
 
         // Only load home page data if we're on the home page
-        if (this.categoriesContainer || this.featuredQuizzesContainer) {
+        if (this.categoriesContainer) {
             console.log('Loading home page data');
             await this.loadHomePageData();
         } else {
@@ -150,84 +145,6 @@ class App {
         }
     }
     
-    /**
-     * Load featured quizzes on homepage
-     */
-    async loadFeaturedQuizzes() {
-        const featuredQuizzesContainer = document.getElementById('featured-quizzes-container');
-        if (!featuredQuizzesContainer) return; // Not on homepage
-        
-        try {
-            const response = await window.api.getFeaturedQuizzes();
-            const quizzes = response.quizzes || [];
-            console.log(`Loaded ${quizzes.length} featured quizzes`);
-            
-            if (quizzes.length === 0) {
-                featuredQuizzesContainer.innerHTML = '<p class="text-center col-span-3">No featured quizzes available.</p>';
-                return;
-            }
-            
-            let html = '';
-            quizzes.forEach(quiz => {
-                const categoryName = quiz.category_name || 'Uncategorized';
-                const rating = parseFloat(quiz.average_rating) || 0;
-                const formattedRating = rating.toFixed(1);
-                
-                // Generate star rating HTML
-                let starsHtml = '';
-                for (let i = 1; i <= 5; i++) {
-                    if (i <= Math.floor(rating)) {
-                        starsHtml += '<i class="fas fa-star text-yellow-400"></i>';
-                    } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
-                        starsHtml += '<i class="fas fa-star-half-alt text-yellow-400"></i>';
-                    } else {
-                        starsHtml += '<i class="far fa-star text-yellow-400"></i>';
-                    }
-                }
-                
-                // Truncate description to ensure uniform card height
-                const description = quiz.description || 'Test your knowledge with this quiz.';
-                const truncatedDescription = description.length > 120 ? 
-                    description.substring(0, 120) + '...' : 
-                    description;
-                
-                html += `
-                    <div class="bg-white shadow-sm rounded-lg overflow-hidden transition-all duration-300 quiz-card">
-                        <div class="p-6">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                ${categoryName}
-                            </span>
-                            <h3 class="mt-3 text-lg font-medium text-gray-900">${quiz.title}</h3>
-                            <p class="mt-2 text-sm text-gray-500 h-10 overflow-hidden">
-                                ${truncatedDescription}
-                            </p>
-                            <div class="mt-4 flex items-center">
-                                <div class="flex-shrink-0">
-                                    <span class="text-sm font-medium text-gray-600">${quiz.questions_count || 0} questions</span>
-                                </div>
-                                <div class="ml-3 flex-1 flex justify-between items-center">
-                                    <div class="text-sm flex items-center">
-                                        ${starsHtml}
-                                        <span class="ml-1 text-gray-500">(${formattedRating})</span>
-                                    </div>
-                                    <div>
-                                        <a href="quiz.html?id=${quiz.quiz_id}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
-                                            Start
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            featuredQuizzesContainer.innerHTML = html;
-        } catch (error) {
-            console.error('Error loading featured quizzes:', error);
-            featuredQuizzesContainer.innerHTML = '<p class="text-center col-span-3 text-red-500">Failed to load featured quizzes.</p>';
-        }
-    }
 
     /**
      * Load home page data
@@ -235,51 +152,21 @@ class App {
     async loadHomePageData() {
         console.log('Loading home page data...');
         try {
-            // Only proceed if we're on the home page
-            if (!this.categoriesContainer && !this.featuredQuizzesContainer) {
-                console.log('Not on home page, skipping data load');
+            // Only proceed if we're on the home page and have categories container
+            if (!this.categoriesContainer) {
+                console.log('Not on home page or no categories container, skipping data load');
                 return;
             }
             
-            // Load categories and featured quizzes in parallel
-            const promises = [];
-            let categories, featuredQuizzes;
-            
-            if (this.categoriesContainer) {
-                console.log('Loading categories...');
-                promises.push(
-                    this.api.getCategories()
-                        .then(data => { categories = data; })
-                        .catch(err => {
-                            console.error('Failed to load categories:', err);
-                            this.showError('Failed to load categories');
-                        })
-                );
-            }
-            
-            if (this.featuredQuizzesContainer) {
-                console.log('Loading featured quizzes...');
-                promises.push(
-                    this.api.getFeaturedQuizzes()
-                        .then(data => { featuredQuizzes = data; })
-                        .catch(err => {
-                            console.error('Failed to load featured quizzes:', err);
-                            this.showError('Failed to load featured quizzes');
-                        })
-                );
-            }
-            
-            await Promise.all(promises);
-            
-            // Render the data if available
-            if (categories && this.categoriesContainer) {
+            // Load categories directly - no need for parallel promises anymore
+            console.log('Loading categories...');
+            try {
+                const categories = await this.api.getCategories();
                 console.log(`Rendering ${categories.length} categories`);
                 this.renderCategories(categories);
-            }
-            
-            if (featuredQuizzes && this.featuredQuizzesContainer) {
-                console.log(`Rendering ${featuredQuizzes.quizzes?.length || 0} featured quizzes`);
-                this.renderFeaturedQuizzes(featuredQuizzes.quizzes || []);
+            } catch (err) {
+                console.error('Failed to load categories:', err);
+                this.showError('Failed to load categories');
             }
             
             console.log('Home page data loaded successfully');
@@ -350,95 +237,6 @@ class App {
         console.log('Categories rendered successfully');
     }
     
-    /**
-     * Render featured quizzes
-     * @param {Array} quizzes - Quizzes data
-     */
-    renderFeaturedQuizzes(quizzes) {
-        console.log(`Rendering ${quizzes.length} featured quizzes`);
-        if (!this.featuredQuizzesContainer) {
-            console.error('Featured quizzes container not found');
-            return;
-        }
-        
-        if (!quizzes || quizzes.length === 0) {
-            console.log('No featured quizzes to render');
-            this.featuredQuizzesContainer.innerHTML = `
-                <div class="text-center py-6">
-                    <p class="text-gray-500">No quizzes found.</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // Clear the container first
-        this.featuredQuizzesContainer.innerHTML = '';
-        
-        quizzes.forEach(quiz => {
-            const categoryName = quiz.category_name || 'Miscellaneous';
-            const rating = parseFloat(quiz.average_rating) || 0;
-            const formattedRating = rating.toFixed(1);
-            
-            // Generate star rating HTML
-            let starsHtml = '';
-            for (let i = 1; i <= 5; i++) {
-                if (i <= Math.floor(rating)) {
-                    starsHtml += '<i class="fas fa-star"></i>';
-                } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
-                    starsHtml += '<i class="fas fa-star-half-alt"></i>';
-                } else {
-                    starsHtml += '<i class="far fa-star"></i>';
-                }
-            }
-            
-            // Create quiz card element
-            const quizCard = document.createElement('div');
-            quizCard.className = 'bg-white shadow-sm rounded-lg overflow-hidden transition-all duration-300 quiz-card cursor-pointer';
-            quizCard.setAttribute('data-quiz-id', quiz.quiz_id);
-            quizCard.innerHTML = `
-                <div class="p-6">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                        ${categoryName}
-                    </span>
-                    <h3 class="mt-3 text-lg font-medium text-gray-900">${quiz.title}</h3>
-                    <p class="mt-2 text-sm text-gray-500 line-clamp-3">
-                        ${quiz.description || 'Test your knowledge with this quiz.'}
-                    </p>
-                    <div class="mt-4 flex items-center">
-                        <div class="flex-shrink-0">
-                            <span class="text-sm font-medium text-gray-600">${quiz.questions_count || '?'} questions</span>
-                        </div>
-                        <div class="ml-3 flex-1 flex justify-between">
-                            <div class="text-sm">
-                                <span class="text-yellow-400">${starsHtml}</span>
-                                <span class="ml-1 text-gray-500">(${formattedRating})</span>
-                            </div>
-                            <div>
-                                <a href="/quiz.html?id=${quiz.quiz_id}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 start-quiz-btn">
-                                    Start
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Add click event listener to navigate to quiz overview
-            quizCard.addEventListener('click', (e) => {
-                // Prevent navigation if user clicked on Start button
-                if (e.target.closest('.start-quiz-btn')) {
-                    return;
-                }
-                
-                // Navigate to quiz overview page
-                window.location.href = `/quiz-overview.html?id=${quiz.quiz_id}`;
-            });
-            
-            this.featuredQuizzesContainer.appendChild(quizCard);
-        });
-        
-        console.log('Featured quizzes rendered successfully');
-    }
     
     /**
      * Handle create quiz button click
