@@ -67,16 +67,24 @@ class Components {
             });
         }
         
-        // Login button
+        // Login button - THIS HAS BEEN FIXED
         const loginBtn = document.getElementById('loginBtn');
         if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
+            console.log('Adding login button click handler in Components');
+            // Remove any existing event listeners by cloning and replacing
+            const newLoginBtn = loginBtn.cloneNode(true);
+            loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
+            
+            newLoginBtn.addEventListener('click', () => {
+                console.log('Login button clicked in Components');
                 // Show login modal if exists
                 const loginModal = document.getElementById('loginModal');
                 if (loginModal) {
+                    console.log('Showing login modal from Components');
                     loginModal.classList.remove('hidden');
                 } else {
                     // Otherwise redirect to login page
+                    console.log('Modal not found, redirecting to login page');
                     window.location.href = '/login.html';
                 }
             });
@@ -243,6 +251,12 @@ class Components {
             
             // Initialize login modal functionality
             this.initLoginModal();
+            
+            // THIS IS NEW - Connect login modal to auth service
+            if (window.auth) {
+                window.auth.loginModal = document.getElementById('loginModal');
+                console.log('Connected login modal to auth service');
+            }
         } catch (error) {
             console.error('Failed to load login modal:', error);
         }
@@ -253,28 +267,70 @@ class Components {
         const closeLoginBtn = document.getElementById('closeLoginBtn');
         const loginForm = document.getElementById('login-form');
         
+        if (!loginModal) {
+            console.error('Login modal not found in initLoginModal');
+            return;
+        }
+        
         if (closeLoginBtn) {
             closeLoginBtn.addEventListener('click', () => {
+                console.log('Close login button clicked');
                 loginModal.classList.add('hidden');
             });
         }
         
         if (loginForm) {
-            loginForm.addEventListener('submit', async (e) => {
+            // Remove any existing event listeners by cloning and replacing
+            const newLoginForm = loginForm.cloneNode(true);
+            loginForm.parentNode.replaceChild(newLoginForm, loginForm);
+            
+            newLoginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                console.log('Login form submitted in Components');
                 
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
-                if (window.auth && window.auth.login) {
-                    try {
-                        await window.auth.login(email, password);
-                        loginModal.classList.add('hidden');
-                        // Refresh auth elements
-                        this.updateAuthElements();
-                    } catch (error) {
-                        console.error('Login failed:', error);
-                        // Show error message
+                if (!email || !password) {
+                    alert('Please enter both email and password');
+                    return;
+                }
+                
+                const signInBtn = document.getElementById('sign-in-btn');
+                if (signInBtn) {
+                    signInBtn.textContent = 'Signing in...';
+                    signInBtn.disabled = true;
+                }
+                
+                try {
+                    // Use the correct auth method - handleLogin instead of login
+                    if (window.auth && window.auth.handleLogin) {
+                        console.log('Using auth.handleLogin method');
+                        await window.auth.handleLogin();
+                    } else if (window.api) {
+                        // Fallback to direct API call
+                        console.log('Auth service not available, calling API directly');
+                        const credentials = { email, password };
+                        const userData = await window.api.login(credentials);
+                        
+                        if (userData.token) {
+                            console.log('Login successful via API');
+                            loginModal.classList.add('hidden');
+                            
+                            // Redirect after successful login
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Login failed:', error);
+                    alert('Login failed. Please check your credentials and try again.');
+                    
+                    // Reset button
+                    if (signInBtn) {
+                        signInBtn.textContent = 'Sign in';
+                        signInBtn.disabled = false;
                     }
                 }
             });
@@ -284,6 +340,7 @@ class Components {
 
 // Initialize components on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM loaded, initializing components');
     // Load components
     await Components.loadNavigation();
     await Components.loadFooter();

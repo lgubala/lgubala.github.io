@@ -19,7 +19,8 @@ class AuthService {
     }
     
     /**
-     * Safely initialize DOM element references
+     * Safely initialize DOM element references 
+     * This function needs to be modified to handle the asynchronously loaded modal
      */
     initDomReferences() {
         console.log('Initializing DOM references for auth elements');
@@ -45,7 +46,8 @@ class AuthService {
             'Login Form': !!this.loginForm,
             'Register Form': !!this.registerForm,
             'Login Button': !!this.loginBtn,
-            'Logout Button': !!this.logoutBtn
+            'Logout Button': !!this.logoutBtn,
+            'Login Modal': !!this.loginModal
         });
     }
     
@@ -84,15 +86,7 @@ class AuthService {
             });
         }
         
-        // Login button
-        if (this.loginBtn) {
-            console.log('Adding login button click handler');
-            this.loginBtn.addEventListener('click', () => {
-                console.log('Login button clicked');
-                this.showLoginModal();
-            });
-        }
-        
+       
         // Close login modal
         if (this.closeLoginBtn) {
             console.log('Adding close login modal button handler');
@@ -486,8 +480,15 @@ class AuthService {
      */
     showLoginModal() {
         console.log('Showing login modal');
+        // First try to get the modal if it wasn't available during initialization
+        if (!this.loginModal) {
+            this.loginModal = document.getElementById('loginModal');
+            console.log('Trying to find login modal again:', !!this.loginModal);
+        }
+        
         if (this.loginModal) {
             this.loginModal.classList.remove('hidden');
+            console.log('Login modal shown');
         } else {
             console.error('Login modal not found, redirecting to login page');
             window.location.href = '/login.html';
