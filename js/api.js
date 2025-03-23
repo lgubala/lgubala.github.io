@@ -372,8 +372,49 @@ return this.delete(`/quizzes/${quizId}`);
  * @returns {Promise} - Created quiz data
  */
 async uploadFileAndCreateQuiz(formData) {
-console.log('Uploading file and creating quiz');
-return this.uploadFile('/quizzes/upload', formData);
+    console.log('Uploading file and creating quiz');
+    
+    // Get progress element if available
+    const progressElement = document.getElementById('uploadProgress');
+    if (progressElement) {
+        progressElement.style.display = 'block';
+        progressElement.value = 0;
+    }
+    
+    try {
+        // Use fetch with longer timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
+        
+        const response = await fetch(`${this.baseUrl}/quizzes/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': this.token ? `Bearer ${this.token}` : ''
+            },
+            body: formData,
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId); // Clear the timeout
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            console.error(`API UPLOAD error (${response.status}):`, errorData);
+            throw new Error(errorData.message || `API error: ${response.status}`);
+        }
+        
+        const responseData = await response.json();
+        console.log(`API UPLOAD response from /quizzes/upload:`, responseData);
+        return responseData;
+    } catch (error) {
+        console.error(`Error uploading: ${error.message}`);
+        throw error;
+    } finally {
+        // Hide progress element
+        if (progressElement) {
+            progressElement.style.display = 'none';
+        }
+    }
 }
 
 /**

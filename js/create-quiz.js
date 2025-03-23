@@ -392,9 +392,6 @@ class CreateQuizManager {
             return;
         }
         
-        // Show processing modal
-        this.showModal(this.processingModal);
-        
         // Create FormData
         const formData = new FormData();
         
@@ -433,7 +430,58 @@ class CreateQuizManager {
         // Add either file or text content
         const isUsingFileUpload = !this.fileUploadSection.classList.contains('hidden');
         
+        // Show processing modal and update its content to show progress
+        this.showModal(this.processingModal);
+        
+        // Get the processing modal title and message elements
+        const modalTitle = this.processingModal.querySelector('#modal-title');
+        const modalMessage = this.processingModal.querySelector('.text-sm.text-gray-500');
+        
+        // Create progress indicator and add it to the processing modal if it doesn't exist
+        let progressIndicator = this.processingModal.querySelector('.progress-indicator');
+        if (!progressIndicator) {
+            const progressContainer = document.createElement('div');
+            progressContainer.className = 'mt-4';
+            progressContainer.innerHTML = `
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="progress-indicator bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 progress-status">Starting process...</p>
+            `;
+            modalMessage.parentNode.appendChild(progressContainer);
+            progressIndicator = progressContainer.querySelector('.progress-indicator');
+        }
+        
+        // Update progress messages
+        let progressStatus = this.processingModal.querySelector('.progress-status');
+        
         try {
+            // Set up progress simulation
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                // Slowly increase progress, but never reach 100%
+                if (progress < 90) {
+                    progress += 0.5 + Math.random() * 1.5;
+                    if (progressIndicator) {
+                        progressIndicator.style.width = `${Math.min(progress, 90)}%`;
+                    }
+                    
+                    // Update status message at key points
+                    if (progressStatus) {
+                        if (progress < 20) {
+                            progressStatus.textContent = "Uploading file...";
+                        } else if (progress < 40) {
+                            progressStatus.textContent = "Extracting text from file...";
+                        } else if (progress < 65) {
+                            progressStatus.textContent = "AI is generating quiz questions...";
+                        } else if (progress < 85) {
+                            progressStatus.textContent = "Almost done! Saving quiz...";
+                        }
+                    }
+                }
+            }, 500);
+            
+            // Prepare file data
             if (isUsingFileUpload) {
                 console.log('Adding file to form data');
                 formData.append('file', this.fileUpload.files[0]);
@@ -446,10 +494,35 @@ class CreateQuizManager {
                 formData.append('is_pasted_content', 'true');
             }
             
-            // Upload file/text and create quiz
-            console.log('Submitting quiz creation request');
-            const response = await this.api.uploadFileAndCreateQuiz(formData);
+            // Make the API request with extended timeout
+            console.log('Submitting quiz creation request with extended timeout');
+            
+            // Use a promise with timeout to handle long-running operations
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timed out')), 180000) // 3 minutes
+            );
+            
+            // Race between the API call and the timeout
+            const response = await Promise.race([
+                this.api.uploadFileAndCreateQuiz(formData),
+                timeoutPromise
+            ]);
+            
             console.log('Quiz creation response:', response);
+            
+            // Clear the progress simulation
+            clearInterval(progressInterval);
+            
+            // Update progress to 100%
+            if (progressIndicator) {
+                progressIndicator.style.width = '100%';
+            }
+            if (progressStatus) {
+                progressStatus.textContent = "Quiz created successfully!";
+            }
+            
+            // Short delay to show the 100% complete state
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             // Hide processing modal
             this.hideModal(this.processingModal);
@@ -459,6 +532,11 @@ class CreateQuizManager {
             
             // Set up view quiz button
             if (this.viewQuizBtn) {
+                // Remove any existing event listeners
+                const newBtn = this.viewQuizBtn.cloneNode(true);
+                this.viewQuizBtn.parentNode.replaceChild(newBtn, this.viewQuizBtn);
+                this.viewQuizBtn = newBtn;
+                
                 this.viewQuizBtn.addEventListener('click', () => {
                     console.log(`Redirecting to quiz page for quiz ID: ${response.quiz_id}`);
                     window.location.href = `/quiz.html?id=${response.quiz_id}`;
@@ -467,11 +545,34 @@ class CreateQuizManager {
         } catch (error) {
             console.error('Error creating quiz:', error);
             
+            // Clear the progress simulation if it exists
+            const progressInterval = error.progressInterval;
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
             // Hide processing modal
             this.hideModal(this.processingModal);
             
-            // Show error modal with message
-            this.showError(error.message || 'An error occurred while processing your request. Please try again.');
+            // Check if the error might be a timeout
+            const isTimeoutError = error.message && (
+                error.message.includes('timeout') || 
+                error.message.includes('aborted') ||
+                error.message.includes('network') ||
+                error.name === 'AbortError'
+            );
+            
+            if (isTimeoutError) {
+                // Show a special message for timeouts
+                this.showError(
+                    'The request may have timed out due to the complexity of your content. ' +
+                    'Your quiz might still be creating. Please check "My Quizzes" in a minute ' +
+                    'to see if it was created successfully.'
+                );
+            } else {
+                // Show error modal with message
+                this.showError(error.message || 'An error occurred while processing your request. Please try again.');
+            }
         }
     }
     
