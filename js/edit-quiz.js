@@ -404,46 +404,8 @@ class EditQuizManager {
         console.log('Quiz form populated with data');
     }
     
-    /**
-     * Collect references from the form
-     * @returns {Array} - Array of reference objects
-     */
-    collectReferences() {
-        const references = [];
-        
-        if (!this.referencesContainer) return references;
-        
-        for (let i = 0; i < this.referencesContainer.children.length; i++) {
-            const referenceDiv = this.referencesContainer.children[i];
-            
-            // Determine if this is a link or citation
-            const isCitation = referenceDiv.querySelector(`#citation-type-${i}`).checked;
-            
-            if (isCitation) {
-                const citationText = referenceDiv.querySelector(`#citation-text-${i}`).value.trim();
-                if (citationText) {
-                    const sourcePage = referenceDiv.querySelector(`#source-page-${i}`).value;
-                    references.push({
-                        is_citation: true,
-                        citation_text: citationText,
-                        source_page: sourcePage ? parseInt(sourcePage) : null
-                    });
-                }
-            } else {
-                const url = referenceDiv.querySelector(`#link-url-${i}`).value.trim();
-                if (url) {
-                    const title = referenceDiv.querySelector(`#link-title-${i}`).value.trim();
-                    references.push({
-                        is_citation: false,
-                        url: url,
-                        title: title || 'Reference Link'
-                    });
-                }
-            }
-        }
-        
-        return references;
-    }
+
+    
 
 
     /**
@@ -477,8 +439,9 @@ class EditQuizManager {
         console.log(`Rendered ${this.questions.length} questions`);
     }
     
+
     /**
-     * Create a question element
+     * Create a question element with enhanced references display
      * @param {Object} question - Question data
      * @param {number} index - Question index
      * @returns {HTMLElement} - Question element
@@ -509,13 +472,54 @@ class EditQuizManager {
             answersSummary = `<span class="font-medium">Correct answer:</span> ${question.correct_answer || 'Not set'}`;
         }
 
-        // Create summary of references
+        // Create enhanced references section
         let referencesSummary = '';
         if (question.references && question.references.length > 0) {
             const refCount = question.references.length;
-            referencesSummary = `<p class="mt-1 text-sm text-gray-500">
-                <span class="font-medium">References:</span> ${refCount} reference${refCount !== 1 ? 's' : ''}
-            </p>`;
+            
+            // Group references by type for better display
+            const citations = question.references.filter(ref => ref.is_citation);
+            const links = question.references.filter(ref => !ref.is_citation);
+            
+            referencesSummary = `
+                <div class="mt-1 text-sm">
+                    <p class="text-gray-500 font-medium">References (${refCount}):</p>
+                    <div class="pl-2 mt-1">`;
+            
+            // Display citations
+            if (citations.length > 0) {
+                referencesSummary += `<div class="mb-1">
+                    <p class="text-gray-600 italic text-xs mb-1">Citations:</p>
+                    <ul class="list-disc pl-4 text-gray-500">`;
+                
+                citations.forEach(citation => {
+                    referencesSummary += `
+                        <li class="mb-1">"${citation.citation_text}"
+                            ${citation.source_page ? `<span class="text-xs">(Page ${citation.source_page})</span>` : ''}
+                        </li>`;
+                });
+                referencesSummary += `</ul></div>`;
+            }
+            
+            // Display links with clickable href tags
+            if (links.length > 0) {
+                referencesSummary += `<div>
+                    <p class="text-gray-600 italic text-xs mb-1">External Sources:</p>
+                    <ul class="list-disc pl-4 text-gray-500">`;
+                
+                links.forEach(link => {
+                    referencesSummary += `
+                        <li class="mb-1">
+                            <a href="${link.url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center">
+                                <i class="fas fa-external-link-alt mr-1 text-xs"></i>
+                                <span>${link.title || 'Reference link'}</span>
+                            </a>
+                        </li>`;
+                });
+                referencesSummary += `</ul></div>`;
+            }
+            
+            referencesSummary += `</div></div>`;
         }
         
         questionElement.innerHTML = `
@@ -650,15 +654,27 @@ class EditQuizManager {
             this.alternativeAnswers.value = question.alternative_answers || '';
         }
         
-        // Set up references
+        // Set up references with enhanced display for multiple references
         this.resetReferencesContainer();
         if (question.references && question.references.length > 0) {
-            question.references.forEach(reference => {
-                this.addReferenceOption(reference);
-            });
+            // Add references in order - citations first, then links
+            const citations = question.references.filter(ref => ref.is_citation);
+            const links = question.references.filter(ref => !ref.is_citation);
+            
+            // Add all citations first
+            citations.forEach(ref => this.addReferenceOption(ref));
+            
+            // Then add all links
+            links.forEach(ref => this.addReferenceOption(ref));
+            
+            // If no references were added, add a default reference
+            if (this.referencesContainer.children.length === 0) {
+                this.addReferenceOption();
+            }
         } else {
-            // Add one empty reference by default
-            this.addReferenceOption();
+            // Add two empty references by default (one citation and one link)
+            this.addReferenceOption({is_citation: true, citation_text: ''});
+            this.addReferenceOption({is_citation: false, url: '', title: ''});
         }
         
         // Show appropriate question type fields
@@ -679,7 +695,7 @@ class EditQuizManager {
     }
 
     /**
-     * Add a reference option to the form
+     * Add a reference option to the form with improved link handling
      * @param {Object} reference - Reference data (optional)
      */
     addReferenceOption(reference = null) {
@@ -695,6 +711,7 @@ class EditQuizManager {
             <div class="flex justify-between mb-2">
                 <div class="flex items-center">
                     <span class="text-sm font-medium">Reference #${referenceIndex + 1}</span>
+                    <span class="ml-1 text-xs text-gray-500">(${referenceIndex === 0 ? 'Primary' : 'Secondary'})</span>
                 </div>
                 <button type="button" class="remove-reference-btn text-red-600 hover:text-red-800">
                     <i class="fas fa-times"></i>
@@ -707,13 +724,13 @@ class EditQuizManager {
                         <input type="radio" name="reference-type-${referenceIndex}" id="link-type-${referenceIndex}" 
                             class="reference-type h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                             data-index="${referenceIndex}" ${isLink ? 'checked' : ''}>
-                        <label for="link-type-${referenceIndex}" class="ml-2 block text-sm text-gray-700">Link</label>
+                        <label for="link-type-${referenceIndex}" class="ml-2 block text-sm text-gray-700">External Link</label>
                     </div>
                     <div class="flex items-center">
                         <input type="radio" name="reference-type-${referenceIndex}" id="citation-type-${referenceIndex}" 
                             class="reference-type h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                             data-index="${referenceIndex}" ${!isLink ? 'checked' : ''}>
-                        <label for="citation-type-${referenceIndex}" class="ml-2 block text-sm text-gray-700">Citation</label>
+                        <label for="citation-type-${referenceIndex}" class="ml-2 block text-sm text-gray-700">Text Citation</label>
                     </div>
                 </div>
             </div>
@@ -725,6 +742,7 @@ class EditQuizManager {
                     <input type="url" id="link-url-${referenceIndex}" 
                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         value="${isLink && reference && reference.url ? reference.url : ''}">
+                    <p class="text-xs text-gray-500 mt-1">Enter a valid URL (e.g., https://example.com)</p>
                 </div>
                 <div class="mb-2">
                     <label for="link-title-${referenceIndex}" class="block text-sm font-medium text-gray-700">Title</label>
@@ -789,6 +807,62 @@ class EditQuizManager {
         this.referencesContainer.appendChild(referenceDiv);
     }
 
+    /**
+     * Collect references from the form with improved validation
+     * @returns {Array} - Array of reference objects
+     */
+    collectReferences() {
+        const references = [];
+        
+        if (!this.referencesContainer) return references;
+        
+        for (let i = 0; i < this.referencesContainer.children.length; i++) {
+            const referenceDiv = this.referencesContainer.children[i];
+            
+            // Determine if this is a link or citation
+            const isCitation = referenceDiv.querySelector(`#citation-type-${i}`).checked;
+            
+            if (isCitation) {
+                const citationText = referenceDiv.querySelector(`#citation-text-${i}`).value.trim();
+                if (citationText) {
+                    const sourcePage = referenceDiv.querySelector(`#source-page-${i}`).value;
+                    references.push({
+                        is_citation: true,
+                        citation_text: citationText,
+                        source_page: sourcePage ? parseInt(sourcePage) : null
+                    });
+                }
+            } else {
+                const url = referenceDiv.querySelector(`#link-url-${i}`).value.trim();
+                if (url) {
+                    // Add https:// if not present
+                    let validUrl = url;
+                    if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
+                        validUrl = 'https://' + validUrl;
+                    }
+                    
+                    const title = referenceDiv.querySelector(`#link-title-${i}`).value.trim();
+                    references.push({
+                        is_citation: false,
+                        url: validUrl,
+                        title: title || 'Reference Link'
+                    });
+                }
+            }
+        }
+        
+        // Ensure at least one reference exists
+        if (references.length === 0) {
+            // Add a default citation
+            references.push({
+                is_citation: true,
+                citation_text: "Information derived from the provided content.",
+                source_page: null
+            });
+        }
+        
+        return references;
+    }
     
     /**
      * Renumber the references after removal

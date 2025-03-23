@@ -839,6 +839,142 @@ class QuizPageManager {
     }
     
     /**
+     * Create review card for a question with enhanced references display
+     * @param {Object} questionData - Question data including user's answer
+     * @param {number} index - Question index
+     * @returns {HTMLElement} - Review card element
+     */
+    createReviewCard(questionData, index) {
+        const { question, userAnswer, isCorrect } = questionData;
+        
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-lg border-l-4 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`;
+        
+        // Determine the correct answer text based on question type
+        let correctAnswerText = '';
+        
+        if (question.question_type === 'multiple_choice') {
+            const correctAnswer = question.answers.find(a => a.is_correct);
+            correctAnswerText = correctAnswer ? correctAnswer.answer_text : 'No correct answer provided';
+        } else if (question.question_type === 'true_false') {
+            correctAnswerText = question.correct_answer ? 'True' : 'False';
+        } else if (question.question_type === 'short_answer') {
+            correctAnswerText = question.correct_answer;
+        }
+        
+        // Determine user answer text
+        let userAnswerText = '';
+        
+        if (question.question_type === 'multiple_choice') {
+            // For multiple choice, find the selected answer text
+            if (userAnswer && userAnswer.selected_answer_id) {
+                const selectedAnswer = question.answers.find(a => a.answer_id === userAnswer.selected_answer_id);
+                userAnswerText = selectedAnswer ? selectedAnswer.answer_text : 'Unknown';
+            } else {
+                userAnswerText = 'Not answered';
+            }
+        } else if (question.question_type === 'true_false') {
+            // For true/false, convert to text
+            if (userAnswer && userAnswer.text_answer !== undefined) {
+                userAnswerText = userAnswer.text_answer === 'true' ? 'True' : 'False';
+            } else {
+                userAnswerText = 'Not answered';
+            }
+        } else if (question.question_type === 'short_answer') {
+            // For short answer, use the text answer
+            userAnswerText = userAnswer && userAnswer.text_answer ? userAnswer.text_answer : 'Not answered';
+        }
+        
+        // Create enhanced references section
+        let referencesHTML = '';
+        if (question.references && question.references.length > 0) {
+            // Group references by type
+            const citations = question.references.filter(ref => ref.is_citation);
+            const links = question.references.filter(ref => !ref.is_citation);
+            
+            referencesHTML = `<div class="mt-3 border-t border-gray-200 pt-3">
+                <h4 class="text-sm font-medium text-gray-700">References:</h4>
+                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">`;
+            
+            // Add citations in the first column
+            if (citations.length > 0) {
+                referencesHTML += `<div class="bg-white bg-opacity-50 p-3 rounded">
+                    <h5 class="text-xs font-medium text-gray-600 mb-1">Citations:</h5>
+                    <ul class="space-y-2 text-xs text-gray-600">`;
+                
+                citations.forEach(citation => {
+                    referencesHTML += `<li class="border-l-2 border-gray-300 pl-2 italic">"${citation.citation_text}"
+                        ${citation.source_page ? `<span class="text-gray-500">(Page ${citation.source_page})</span>` : ''}
+                    </li>`;
+                });
+                
+                referencesHTML += `</ul></div>`;
+            }
+            
+            // Add external links in the second column
+            if (links.length > 0) {
+                referencesHTML += `<div class="bg-white bg-opacity-50 p-3 rounded">
+                    <h5 class="text-xs font-medium text-gray-600 mb-1">External Sources:</h5>
+                    <ul class="space-y-2 text-xs">`;
+                
+                links.forEach(link => {
+                    referencesHTML += `<li>
+                        <a href="${link.url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center">
+                            <i class="fas fa-external-link-alt mr-1 text-xs"></i>
+                            <span>${link.title || link.url}</span>
+                        </a>
+                    </li>`;
+                });
+                
+                referencesHTML += `</ul></div>`;
+            }
+            
+            referencesHTML += `</div></div>`;
+        }
+        
+        card.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-md font-medium ${isCorrect ? 'text-green-700' : 'text-red-700'}">
+                    Question ${index + 1}${isCorrect ? ' ✓' : ' ✗'}
+                </h3>
+                ${question.points ? `
+                    <span class="text-sm ${isCorrect ? 'text-green-600' : 'text-red-600'}">
+                        ${userAnswer ? userAnswer.points_earned : 0}/${question.points} points
+                    </span>
+                ` : ''}
+            </div>
+            
+            <p class="text-gray-700 mb-2">${question.question_text}</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                <div class="bg-white bg-opacity-60 p-2 rounded">
+                    <p class="text-xs text-gray-500">Your answer:</p>
+                    <p class="font-medium text-sm ${isCorrect ? 'text-green-600' : 'text-red-600'}">${userAnswerText}</p>
+                </div>
+                
+                <div class="bg-white bg-opacity-60 p-2 rounded">
+                    <p class="text-xs text-gray-500">Correct answer:</p>
+                    <p class="font-medium text-sm text-gray-700">${correctAnswerText}</p>
+                </div>
+            </div>
+            
+            ${question.explanation ? `
+                <div class="bg-white bg-opacity-70 p-3 rounded">
+                    <p class="text-xs text-gray-500 mb-1">Explanation:</p>
+                    <p class="text-sm text-gray-700">${question.explanation}</p>
+                </div>
+            ` : ''}
+            
+            ${referencesHTML}
+        `;
+        
+        return card;
+    }
+
+
+
+ 
+    /**
      * Generate review content for results
      * @param {Array} resultsData - Results data for each question
      */
@@ -918,41 +1054,59 @@ class QuizPageManager {
                 `;
             }
             
-            // NEW: Add references section
+            // References section with properly formatted content
             let referencesHtml = '';
             if (result.references && result.references.length > 0) {
-                let citationsHtml = '';
-                let linksHtml = '';
+                // Group references by type for better display
+                const citations = result.references.filter(ref => ref.is_citation);
+                const links = result.references.filter(ref => !ref.is_citation);
                 
-                result.references.forEach(ref => {
-                    if (ref.is_citation) {
-                        citationsHtml += `
-                            <div class="p-2 border border-gray-200 rounded-md mb-1 bg-gray-50">
-                                <p class="text-xs italic text-gray-600">"${ref.citation_text}"</p>
-                                ${ref.source_page ? `<p class="text-xs text-gray-500 mt-1">Source: page ${ref.source_page}</p>` : ''}
-                            </div>
-                        `;
-                    } else if (ref.url) {
-                        linksHtml += `
-                            <div class="mb-1">
-                                <a href="${ref.url}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-800 flex items-center">
-                                    <i class="fas fa-external-link-alt mr-1"></i>
-                                    ${ref.title || 'Reference Link'}
-                                </a>
-                            </div>
-                        `;
-                    }
-                });
+                referencesHtml = `
+                    <div class="mt-3 border-t border-gray-200 pt-2">
+                        <p class="text-sm font-medium text-gray-700 mb-1">References:</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">`;
                 
-                if (citationsHtml || linksHtml) {
-                    referencesHtml = `
-                        <div class="mt-3 border-t border-gray-200 pt-2">
-                            <p class="text-sm font-medium text-gray-700 mb-1">References:</p>
-                            ${linksHtml}
-                            ${citationsHtml}
-                        </div>
-                    `;
+                // Add citations section
+                if (citations.length > 0) {
+                    referencesHtml += `
+                        <div class="bg-gray-50 p-2 rounded">
+                            <p class="text-xs text-gray-600 italic mb-1">Citations:</p>
+                            <ul class="pl-4 list-disc">`;
+                    
+                    citations.forEach(citation => {
+                        referencesHtml += `
+                            <li class="text-xs text-gray-600 mb-1">"${citation.citation_text}"
+                                ${citation.source_page ? `<span class="text-gray-500">(Page ${citation.source_page})</span>` : ''}
+                            </li>`;
+                    });
+                    
+                    referencesHtml += `</ul>
+                        </div>`;
                 }
+                
+                // Add external links section with clickable links
+                if (links.length > 0) {
+                    referencesHtml += `
+                        <div class="bg-gray-50 p-2 rounded">
+                            <p class="text-xs text-gray-600 italic mb-1">External Sources:</p>
+                            <ul class="pl-4 list-disc">`;
+                    
+                    links.forEach(link => {
+                        referencesHtml += `
+                            <li class="text-xs mb-1">
+                                <a href="${link.url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 hover:underline flex items-center">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    <span>${link.title || 'Reference Link'}</span>
+                                </a>
+                            </li>`;
+                    });
+                    
+                    referencesHtml += `</ul>
+                        </div>`;
+                }
+                
+                referencesHtml += `</div>
+                    </div>`;
             }
             
             reviewDiv.innerHTML = `

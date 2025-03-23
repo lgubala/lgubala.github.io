@@ -22,6 +22,8 @@ const UIUtils = {
             element.classList.add('hidden');
         }
     },
+
+    
     
     /**
      * Toggle element visibility
