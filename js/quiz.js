@@ -812,7 +812,8 @@ class QuizPageManager {
                 points,
                 answers: question.answers || [{ answer_text: 'True' }, { answer_text: 'False' }],
                 explanation: question.explanation,
-                questionType: question.question_type
+                questionType: question.question_type,
+                references: question.references || [] // Add references to results
             };
         });
         
@@ -848,7 +849,7 @@ class QuizPageManager {
         
         resultsData.forEach((result, index) => {
             const reviewDiv = document.createElement('div');
-            reviewDiv.className = 'p-4 border rounded-lg';
+            reviewDiv.className = 'p-4 border rounded-lg mb-4';
             
             let statusBadge = '';
             if (result.isCorrect) {
@@ -917,6 +918,43 @@ class QuizPageManager {
                 `;
             }
             
+            // NEW: Add references section
+            let referencesHtml = '';
+            if (result.references && result.references.length > 0) {
+                let citationsHtml = '';
+                let linksHtml = '';
+                
+                result.references.forEach(ref => {
+                    if (ref.is_citation) {
+                        citationsHtml += `
+                            <div class="p-2 border border-gray-200 rounded-md mb-1 bg-gray-50">
+                                <p class="text-xs italic text-gray-600">"${ref.citation_text}"</p>
+                                ${ref.source_page ? `<p class="text-xs text-gray-500 mt-1">Source: page ${ref.source_page}</p>` : ''}
+                            </div>
+                        `;
+                    } else if (ref.url) {
+                        linksHtml += `
+                            <div class="mb-1">
+                                <a href="${ref.url}" target="_blank" class="text-sm text-indigo-600 hover:text-indigo-800 flex items-center">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    ${ref.title || 'Reference Link'}
+                                </a>
+                            </div>
+                        `;
+                    }
+                });
+                
+                if (citationsHtml || linksHtml) {
+                    referencesHtml = `
+                        <div class="mt-3 border-t border-gray-200 pt-2">
+                            <p class="text-sm font-medium text-gray-700 mb-1">References:</p>
+                            ${linksHtml}
+                            ${citationsHtml}
+                        </div>
+                    `;
+                }
+            }
+            
             reviewDiv.innerHTML = `
                 <div class="flex justify-between items-center mb-2">
                     <span class="font-medium">Question ${index + 1}</span>
@@ -925,6 +963,7 @@ class QuizPageManager {
                 <p class="text-gray-700 mb-2">${result.question}</p>
                 ${answersHtml}
                 ${explanationHtml}
+                ${referencesHtml}
             `;
             
             this.reviewContainer.appendChild(reviewDiv);

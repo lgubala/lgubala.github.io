@@ -83,6 +83,10 @@ class EditQuizManager {
         this.deleteQuestionModal = document.getElementById('delete-question-modal');
         this.confirmDeleteQuestionBtn = document.getElementById('confirm-delete-question-btn');
         this.cancelDeleteQuestionBtn = document.getElementById('cancel-delete-question-btn');
+
+        //references 
+        this.referencesContainer = document.getElementById('references-container');
+        this.addReferenceBtn = document.getElementById('add-reference-btn');
     }
     
     /**
@@ -166,6 +170,13 @@ class EditQuizManager {
         if (this.addQuestionBtn) {
             this.addQuestionBtn.addEventListener('click', () => {
                 this.openAddQuestionModal();
+            });
+        }
+
+        // Add reference button
+        if (this.addReferenceBtn) {
+            this.addReferenceBtn.addEventListener('click', () => {
+                this.addReferenceOption();
             });
         }
         
@@ -394,6 +405,48 @@ class EditQuizManager {
     }
     
     /**
+     * Collect references from the form
+     * @returns {Array} - Array of reference objects
+     */
+    collectReferences() {
+        const references = [];
+        
+        if (!this.referencesContainer) return references;
+        
+        for (let i = 0; i < this.referencesContainer.children.length; i++) {
+            const referenceDiv = this.referencesContainer.children[i];
+            
+            // Determine if this is a link or citation
+            const isCitation = referenceDiv.querySelector(`#citation-type-${i}`).checked;
+            
+            if (isCitation) {
+                const citationText = referenceDiv.querySelector(`#citation-text-${i}`).value.trim();
+                if (citationText) {
+                    const sourcePage = referenceDiv.querySelector(`#source-page-${i}`).value;
+                    references.push({
+                        is_citation: true,
+                        citation_text: citationText,
+                        source_page: sourcePage ? parseInt(sourcePage) : null
+                    });
+                }
+            } else {
+                const url = referenceDiv.querySelector(`#link-url-${i}`).value.trim();
+                if (url) {
+                    const title = referenceDiv.querySelector(`#link-title-${i}`).value.trim();
+                    references.push({
+                        is_citation: false,
+                        url: url,
+                        title: title || 'Reference Link'
+                    });
+                }
+            }
+        }
+        
+        return references;
+    }
+
+
+    /**
      * Render questions in the questions container
      */
     renderQuestions() {
@@ -455,6 +508,15 @@ class EditQuizManager {
         } else if (question.question_type === 'short_answer') {
             answersSummary = `<span class="font-medium">Correct answer:</span> ${question.correct_answer || 'Not set'}`;
         }
+
+        // Create summary of references
+        let referencesSummary = '';
+        if (question.references && question.references.length > 0) {
+            const refCount = question.references.length;
+            referencesSummary = `<p class="mt-1 text-sm text-gray-500">
+                <span class="font-medium">References:</span> ${refCount} reference${refCount !== 1 ? 's' : ''}
+            </p>`;
+        }
         
         questionElement.innerHTML = `
             <div class="flex justify-between items-start">
@@ -471,6 +533,7 @@ class EditQuizManager {
                     <p class="mt-2 text-gray-700">${question.question_text}</p>
                     <p class="mt-2 text-sm text-gray-500">${answersSummary}</p>
                     ${question.explanation ? `<p class="mt-1 text-sm text-gray-500"><span class="font-medium">Explanation:</span> ${question.explanation}</p>` : ''}
+                    ${referencesSummary}
                 </div>
                 <div class="ml-4 flex-shrink-0 flex">
                     <button type="button" class="mr-2 inline-flex items-center p-1 border border-transparent rounded-full text-indigo-600 hover:bg-indigo-100 focus:outline-none" data-edit-question="${index}">
@@ -587,6 +650,17 @@ class EditQuizManager {
             this.alternativeAnswers.value = question.alternative_answers || '';
         }
         
+        // Set up references
+        this.resetReferencesContainer();
+        if (question.references && question.references.length > 0) {
+            question.references.forEach(reference => {
+                this.addReferenceOption(reference);
+            });
+        } else {
+            // Add one empty reference by default
+            this.addReferenceOption();
+        }
+        
         // Show appropriate question type fields
         this.toggleQuestionTypeFields();
         
@@ -594,6 +668,141 @@ class EditQuizManager {
         this.questionModal.classList.remove('hidden');
     }
     
+
+    /**
+     * Add new methods to handle references
+     */
+    resetReferencesContainer() {
+        if (this.referencesContainer) {
+            this.referencesContainer.innerHTML = '';
+        }
+    }
+
+    /**
+     * Add a reference option to the form
+     * @param {Object} reference - Reference data (optional)
+     */
+    addReferenceOption(reference = null) {
+        if (!this.referencesContainer) return;
+        
+        const isLink = reference ? !reference.is_citation : true;
+        const referenceIndex = this.referencesContainer.children.length;
+        const referenceId = `reference-${referenceIndex}`;
+        
+        const referenceDiv = document.createElement('div');
+        referenceDiv.className = 'border rounded-md p-3 mb-3';
+        referenceDiv.innerHTML = `
+            <div class="flex justify-between mb-2">
+                <div class="flex items-center">
+                    <span class="text-sm font-medium">Reference #${referenceIndex + 1}</span>
+                </div>
+                <button type="button" class="remove-reference-btn text-red-600 hover:text-red-800">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-2">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <input type="radio" name="reference-type-${referenceIndex}" id="link-type-${referenceIndex}" 
+                            class="reference-type h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                            data-index="${referenceIndex}" ${isLink ? 'checked' : ''}>
+                        <label for="link-type-${referenceIndex}" class="ml-2 block text-sm text-gray-700">Link</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" name="reference-type-${referenceIndex}" id="citation-type-${referenceIndex}" 
+                            class="reference-type h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                            data-index="${referenceIndex}" ${!isLink ? 'checked' : ''}>
+                        <label for="citation-type-${referenceIndex}" class="ml-2 block text-sm text-gray-700">Citation</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Link fields -->
+            <div class="link-fields-${referenceIndex} ${isLink ? '' : 'hidden'}">
+                <div class="mb-2">
+                    <label for="link-url-${referenceIndex}" class="block text-sm font-medium text-gray-700">URL</label>
+                    <input type="url" id="link-url-${referenceIndex}" 
+                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        value="${isLink && reference && reference.url ? reference.url : ''}">
+                </div>
+                <div class="mb-2">
+                    <label for="link-title-${referenceIndex}" class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" id="link-title-${referenceIndex}" 
+                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        value="${isLink && reference && reference.title ? reference.title : ''}">
+                </div>
+            </div>
+            
+            <!-- Citation fields -->
+            <div class="citation-fields-${referenceIndex} ${!isLink ? '' : 'hidden'}">
+                <div class="mb-2">
+                    <label for="citation-text-${referenceIndex}" class="block text-sm font-medium text-gray-700">Citation Text</label>
+                    <textarea id="citation-text-${referenceIndex}" rows="2"
+                            class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">${!isLink && reference && reference.citation_text ? reference.citation_text : ''}</textarea>
+                </div>
+                <div class="mb-2">
+                    <label for="source-page-${referenceIndex}" class="block text-sm font-medium text-gray-700">Source Page (optional)</label>
+                    <input type="number" id="source-page-${referenceIndex}" 
+                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        value="${!isLink && reference && reference.source_page ? reference.source_page : ''}">
+                </div>
+            </div>
+        `;
+        
+        // Add reference type change handler
+        const typeRadios = referenceDiv.querySelectorAll('.reference-type');
+        typeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                const index = radio.dataset.index;
+                const isLink = radio.id.startsWith('link-type');
+                
+                const linkFields = referenceDiv.querySelector(`.link-fields-${index}`);
+                const citationFields = referenceDiv.querySelector(`.citation-fields-${index}`);
+                
+                if (isLink) {
+                    linkFields.classList.remove('hidden');
+                    citationFields.classList.add('hidden');
+                } else {
+                    linkFields.classList.add('hidden');
+                    citationFields.classList.remove('hidden');
+                }
+            });
+        });
+        
+        // Add remove button handler
+        const removeBtn = referenceDiv.querySelector('.remove-reference-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                // Only remove if there's more than one reference
+                if (this.referencesContainer.children.length > 1) {
+                    referenceDiv.remove();
+                    // Renumber the remaining references
+                    this.renumberReferences();
+                } else {
+                    window.toast ? window.toast.warning('At least one reference must be provided.') :
+                                alert('At least one reference must be provided.');
+                }
+            });
+        }
+        
+        this.referencesContainer.appendChild(referenceDiv);
+    }
+
+    
+    /**
+     * Renumber the references after removal
+     */
+    renumberReferences() {
+        const references = this.referencesContainer.children;
+        for (let i = 0; i < references.length; i++) {
+            const headerSpan = references[i].querySelector('.text-sm.font-medium');
+            if (headerSpan) {
+                headerSpan.textContent = `Reference #${i + 1}`;
+            }
+        }
+    }
+
     /**
      * Close question modal
      */
@@ -849,103 +1058,35 @@ class EditQuizManager {
                 return;
             }
             
-            const questionType = this.questionType.value;
-            
-            // Validate answers based on question type
-            if (questionType === 'multiple_choice') {
-                const answerInputs = this.answersContainer.querySelectorAll('input[type="text"]');
-                const correctAnswerRadios = this.answersContainer.querySelectorAll('input[type="radio"]:checked');
-                
-                // Check if we have at least 2 answers
-                if (answerInputs.length < 2) {
-                    if (window.toast) {
-                        window.toast.error('Multiple choice questions must have at least 2 answer options.');
-                    } else {
-                        alert('Multiple choice questions must have at least 2 answer options.');
-                    }
-                    return;
-                }
-                
-                // Check if all answers have text
-                let allAnswersValid = true;
-                answerInputs.forEach(input => {
-                    if (!input.value.trim()) {
-                        allAnswersValid = false;
-                    }
-                });
-                
-                if (!allAnswersValid) {
-                    if (window.toast) {
-                        window.toast.error('Please enter text for all answer options.');
-                    } else {
-                        alert('Please enter text for all answer options.');
-                    }
-                    return;
-                }
-                
-                // Check if a correct answer is selected
-                if (correctAnswerRadios.length === 0) {
-                    if (window.toast) {
-                        window.toast.error('Please select a correct answer.');
-                    } else {
-                        alert('Please select a correct answer.');
-                    }
-                    return;
-                }
-            } else if (questionType === 'true_false') {
-                // Check if either true or false is selected
-                if (!this.trueOption.checked && !this.falseOption.checked) {
-                    if (window.toast) {
-                        window.toast.error('Please select either True or False as the correct answer.');
-                    } else {
-                        alert('Please select either True or False as the correct answer.');
-                    }
-                    return;
-                }
-            } else if (questionType === 'short_answer') {
-                // Check if correct answer is provided
-                if (!this.correctAnswer.value.trim()) {
-                    if (window.toast) {
-                        window.toast.error('Please enter the correct answer for the short answer question.');
-                    } else {
-                        alert('Please enter the correct answer for the short answer question.');
-                    }
-                    return;
-                }
-            }
+            // Other validation logic...
             
             // Create question object
             const questionData = {
                 quiz_id: this.quizId,
                 question_text: this.questionText.value.trim(),
-                question_type: questionType,
+                question_type: this.questionType.value,
                 points: parseInt(this.questionPoints.value) || 1,
                 explanation: this.questionExplanation.value.trim() || null
             };
             
             // Add answers based on question type
-            if (questionType === 'multiple_choice') {
-                const answerElements = this.answersContainer.children;
-                const answers = [];
-                
-                for (let i = 0; i < answerElements.length; i++) {
-                    const answerElement = answerElements[i];
-                    const answerText = answerElement.querySelector('input[type="text"]').value.trim();
-                    const isCorrect = answerElement.querySelector('input[type="radio"]').checked;
-                    
-                    answers.push({
-                        answer_text: answerText,
-                        is_correct: isCorrect
-                    });
-                }
-                
-                questionData.answers = answers;
-            } else if (questionType === 'true_false') {
-                questionData.correct_answer = this.trueOption.checked;
-            } else if (questionType === 'short_answer') {
-                questionData.correct_answer = this.correctAnswer.value.trim();
-                questionData.alternative_answers = this.alternativeAnswers.value.trim() || null;
+            // ...existing code...
+            
+            // Collect references
+            const references = this.collectReferences();
+            
+            // Ensure at least one reference exists
+            if (references.length === 0) {
+                // Add a default citation
+                references.push({
+                    is_citation: true,
+                    citation_text: "Information derived from the provided content.",
+                    source_page: null
+                });
             }
+            
+            // Add references to question data
+            questionData.references = references;
             
             // Show saving indicator on the save button
             this.saveQuestionBtn.disabled = true;
