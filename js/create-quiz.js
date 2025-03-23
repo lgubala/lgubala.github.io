@@ -54,6 +54,52 @@ class CreateQuizManager {
      * Attach event listeners
      */
     attachEventListeners() {
+
+        //file upload 
+        const removeFileBtn = document.getElementById('remove-file-btn');
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', () => {
+                this.resetFileUploadUI();
+            });
+        }
+
+
+        if (this.fileUploadSection) {
+            const dropZone = this.fileUploadSection.querySelector('.border-dashed');
+            
+            // Prevent default behavior to stop browser from opening the file
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+            
+            // Add visual feedback when dragging over
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+                });
+            });
+            
+            // Remove visual feedback when leaving or after drop
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+                });
+            });
+            
+            // Handle the drop event
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.fileUpload.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    this.fileUpload.dispatchEvent(event);
+                }
+            });
+        }
+
         // Category change to load subcategories
         if (this.categorySelect) {
             this.categorySelect.addEventListener('change', async () => {
@@ -183,9 +229,6 @@ class CreateQuizManager {
             if (file.size > 10 * 1024 * 1024) {
                 this.showError('File size exceeds 10MB limit. Please choose a smaller file.');
                 this.fileUpload.value = ''; // Clear the file input
-                if (this.selectedFileName) {
-                    this.selectedFileName.classList.add('hidden');
-                }
                 return;
             }
             
@@ -212,26 +255,27 @@ class CreateQuizManager {
                 if (!proceed) {
                     console.log('User canceled file selection due to unsupported type');
                     this.fileUpload.value = ''; // Clear the file input
-                    if (this.selectedFileName) {
-                        this.selectedFileName.classList.add('hidden');
-                    }
                     return;
                 }
                 console.log('User chose to proceed with potentially unsupported file type');
             }
             
-            // Update UI with file name
-            if (this.selectedFileName) {
-                this.selectedFileName.textContent = `Selected file: ${file.name}`;
-                this.selectedFileName.classList.remove('hidden');
+            // Update UI to show selected file
+            const uploadPrompt = document.getElementById('upload-prompt');
+            const selectedFileDisplay = document.getElementById('selected-file-display');
+            const selectedFileName = document.getElementById('selected-file-name');
+            
+            if (uploadPrompt && selectedFileDisplay && selectedFileName) {
+                uploadPrompt.classList.add('hidden');
+                selectedFileDisplay.classList.remove('hidden');
+                selectedFileName.textContent = file.name;
             }
         } else {
             console.log('No file selected');
-            if (this.selectedFileName) {
-                this.selectedFileName.classList.add('hidden');
-            }
+            this.resetFileUploadUI();
         }
     }
+
     
     /**
      * Switch to file upload mode

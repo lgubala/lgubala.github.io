@@ -87,7 +87,7 @@
                             
                             <!-- File upload section -->
                             <div id="file-upload-section">
-                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                <div id="upload-prompt" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                                     <div class="space-y-1 text-center">
                                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -102,7 +102,21 @@
                                         <p class="text-xs text-gray-500">
                                             PDF, DOC, DOCX, PPT, PPTX, TXT up to 10MB
                                         </p>
-                                        <p id="selected-file-name" class="text-sm text-gray-700 mt-2 hidden"></p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Selected file display (initially hidden) -->
+                                <div id="selected-file-display" class="hidden mt-2 p-3 bg-indigo-50 border border-indigo-300 rounded-md">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <svg class="h-6 w-6 text-indigo-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span id="selected-file-name" class="text-sm font-medium text-indigo-800"></span>
+                                        </div>
+                                        <button type="button" id="remove-file-btn" class="text-indigo-500 hover:text-indigo-700">
+                                            <i class="fas fa-times"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -115,12 +129,28 @@
                         
                         <div class="col-span-2 sm:col-span-1 mt-4">
                             <label for="numQuestions" class="block text-sm font-medium text-gray-700">Number of Questions</label>
-                            <input type="number" name="numQuestions" id="numQuestions" min="5" max="50" value="10" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                            <select id="numQuestions" name="numQuestions" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                            </select>
                         </div>
                         
                         <div class="col-span-2 sm:col-span-1 mt-4">
-                            <label for="timeLimit" class="block text-sm font-medium text-gray-700">Time Limit (minutes, 0 for no limit)</label>
-                            <input type="number" name="timeLimit" id="timeLimit" min="0" max="120" value="0" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                            <label for="timeLimit" class="block text-sm font-medium text-gray-700">Time Limit (minutes)</label>
+                            <select id="timeLimit" name="timeLimit" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="0" selected>No time limit</option>
+                                <option value="5">5 minutes</option>
+                                <option value="10">10 minutes</option>
+                                <option value="15">15 minutes</option>
+                                <option value="20">20 minutes</option>
+                                <option value="25">25 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="45">45 minutes</option>
+                                <option value="50">50 minutes</option>
+                                <option value="60">60 minutes</option>
+                            </select>
                         </div>
                         
                         <div class="col-span-2 sm:col-span-1 mt-4">
