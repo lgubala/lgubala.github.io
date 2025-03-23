@@ -307,11 +307,12 @@ return this.get(`/categories/${categoryId}/subcategories`);
  * Get featured quizzes
  * @param {number} limit - Number of quizzes to return
  * @param {number} offset - Offset for pagination
+ * @param {boolean} random - Whether to return random quizzes
  * @returns {Promise} - Quizzes data
  */
-async getFeaturedQuizzes(limit = 6, offset = 0) {
-console.log(`Fetching featured quizzes (limit: ${limit}, offset: ${offset})`);
-return this.get(`/quizzes?limit=${limit}&offset=${offset}`);
+async getFeaturedQuizzes(limit = 6, offset = 0, random = false) {
+    console.log(`Fetching featured quizzes (limit: ${limit}, offset: ${offset}, random: ${random})`);
+    return this.get(`/quizzes?limit=${limit}&offset=${offset}${random ? '&random=true' : ''}`);
 }
 
 /**
