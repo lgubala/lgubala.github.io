@@ -13,8 +13,10 @@ class BrowsePageManager {
         this.pageSize = 9; // Number of quizzes per page
         this.quizzes = [];
         this.categories = [];
+        this.subcategories = [];
         this.currentFilters = {
             category: '',
+            subcategory: '',
             difficulty: '',
             query: '',
             sort: 'recent'
@@ -46,6 +48,7 @@ class BrowsePageManager {
         
         // Filters and search
         this.categoryFilter = document.getElementById('category-filter');
+        this.subcategoryFilter = document.getElementById('subcategory-filter'); // Add this line
         this.difficultyFilter = document.getElementById('difficulty-filter');
         this.sortBy = document.getElementById('sort-by');
         this.searchInput = document.getElementById('search-input');
@@ -82,6 +85,8 @@ class BrowsePageManager {
             // Set the select element to match
             if (this.categoryFilter) {
                 this.categoryFilter.value = categoryParam;
+                // Load subcategories for this category
+                await this.handleCategoryChange();
             }
         } else {
             // Normal initialization - load categories first
@@ -125,6 +130,11 @@ class BrowsePageManager {
         if (this.nextPageBtn) {
             this.nextPageBtn.addEventListener('click', () => this.goToNextPage());
         }
+        
+        // Add event listener for category filter change
+        if (this.categoryFilter) {
+            this.categoryFilter.addEventListener('change', () => this.handleCategoryChange());
+        }
     }
     
     /**
@@ -157,6 +167,60 @@ class BrowsePageManager {
             console.error('Error loading categories:', error);
         }
     }
+
+
+    /**
+     * Handle category selection change
+     */
+    async handleCategoryChange() {
+        const categoryId = this.categoryFilter.value;
+        
+        // Reset subcategory filter value
+        if (this.subcategoryFilter) {
+            this.currentFilters.subcategory = '';
+        }
+        
+        // Manage subcategory dropdown state
+        if (this.subcategoryFilter) {
+            if (!categoryId) {
+                // If no category is selected, disable subcategory dropdown
+                this.subcategoryFilter.disabled = true;
+                this.subcategoryFilter.classList.add('cursor-not-allowed', 'opacity-60');
+                
+                // Reset options
+                this.subcategoryFilter.innerHTML = '<option value="">Select Category First</option>';
+                this.subcategories = [];
+            } else {
+                // Show loading state
+                this.subcategoryFilter.disabled = true;
+                this.subcategoryFilter.innerHTML = '<option value="">Loading subcategories...</option>';
+                
+                try {
+                    // Fetch subcategories for selected category
+                    this.subcategories = await this.api.getSubcategories(categoryId);
+                    console.log(`Loaded ${this.subcategories.length} subcategories for category ${categoryId}`);
+                    
+                    // Reset dropdown
+                    this.subcategoryFilter.innerHTML = '<option value="">All Subcategories</option>';
+                    
+                    // Add subcategories to dropdown
+                    this.subcategories.forEach(subcategory => {
+                        const option = document.createElement('option');
+                        option.value = subcategory.subcategory_id;
+                        option.textContent = subcategory.name;
+                        this.subcategoryFilter.appendChild(option);
+                    });
+                    
+                    // Enable dropdown
+                    this.subcategoryFilter.disabled = false;
+                    this.subcategoryFilter.classList.remove('cursor-not-allowed', 'opacity-60');
+                } catch (error) {
+                    console.error('Error loading subcategories:', error);
+                    this.subcategoryFilter.innerHTML = '<option value="">Failed to load subcategories</option>';
+                }
+            }
+        }
+    }
     
     /**
      * Load quizzes based on current filters and pagination
@@ -172,12 +236,29 @@ class BrowsePageManager {
             const offset = (this.currentPage - 1) * this.pageSize;
             
             if (this.currentFilters.category) {
-                // Get quizzes by category
-                response = await this.api.getQuizzesByCategory(
-                    this.currentFilters.category, 
-                    this.pageSize, 
-                    offset
-                );
+                // Get quizzes by category with optional subcategory filter
+                const endpoint = '/quizzes/category/' + this.currentFilters.category;
+                const params = new URLSearchParams({
+                    limit: this.pageSize,
+                    offset: offset
+                });
+                
+                // Add subcategory filter if present
+                if (this.currentFilters.subcategory) {
+                    params.append('subcategory', this.currentFilters.subcategory);
+                }
+                
+                // Add difficulty filter if present
+                if (this.currentFilters.difficulty) {
+                    params.append('difficulty', this.currentFilters.difficulty);
+                }
+                
+                // Add sort parameter if present
+                if (this.currentFilters.sort) {
+                    params.append('sort', this.currentFilters.sort);
+                }
+                
+                response = await this.api.get(`${endpoint}?${params}`);
                 
                 // Show category info
                 this.updateCategoryInfo(response);
@@ -188,7 +269,8 @@ class BrowsePageManager {
                     this.currentFilters.query,
                     this.currentFilters.category || null,
                     this.pageSize,
-                    offset
+                    offset,
+                    this.currentFilters.subcategory || null
                 );
             } else {
                 // Get all quizzes with filters
@@ -205,6 +287,10 @@ class BrowsePageManager {
                 
                 if (this.currentFilters.sort) {
                     params.append('sort', this.currentFilters.sort);
+                }
+
+                if (this.currentFilters.subcategory) {
+                    params.append('subcategory', this.currentFilters.subcategory);
                 }
                 
                 response = await this.api.get(`${endpoint}?${params}`);
@@ -418,6 +504,10 @@ class BrowsePageManager {
             this.currentFilters.category = this.categoryFilter.value;
         }
         
+        if (this.subcategoryFilter) {
+            this.currentFilters.subcategory = this.subcategoryFilter.value;
+        }
+        
         if (this.difficultyFilter) {
             this.currentFilters.difficulty = this.difficultyFilter.value;
         }
@@ -435,12 +525,19 @@ class BrowsePageManager {
      */
     clearFilters() {
         if (this.categoryFilter) this.categoryFilter.value = '';
+        if (this.subcategoryFilter) {
+            this.subcategoryFilter.value = '';
+            this.subcategoryFilter.disabled = true;
+            this.subcategoryFilter.classList.add('cursor-not-allowed', 'opacity-60');
+            this.subcategoryFilter.innerHTML = '<option value="">Select Category First</option>';
+        }
         if (this.difficultyFilter) this.difficultyFilter.value = '';
         if (this.sortBy) this.sortBy.value = 'recent';
         if (this.searchInput) this.searchInput.value = '';
         
         this.currentFilters = {
             category: '',
+            subcategory: '',
             difficulty: '',
             query: '',
             sort: 'recent'
